@@ -1184,7 +1184,34 @@ body.auth-layout {
 
 /* Wider auth card for dual-pane layout */
 body.auth-layout .auth-card {
-    width: min(900px, calc(100vw - 24px));
+    width: min(820px, calc(100vw - 24px));
+}
+
+/* Logo visibility: top logo for narrow, pane logo for dual */
+.auth-logo-pane {
+    display: none;
+}
+body.auth-layout .auth-logo-top {
+    display: none;
+}
+body.auth-layout .auth-logo-pane {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 22px 24px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+body.auth-layout .auth-logo-pane .auth-logo-icon {
+    flex-shrink: 0;
+}
+body.auth-layout .auth-logo-pane .auth-title {
+    font-size: 18px;
+    margin-bottom: 2px;
+}
+body.auth-layout .auth-logo-pane .auth-sub {
+    font-size: 12px;
+    margin-top: 0;
 }
 
 /* Hide the tab toggle when both panes are visible */
@@ -1199,17 +1226,23 @@ body.auth-layout .auth-switch {
 body.auth-layout .auth-forms-wrap {
     display: flex;
     flex-direction: row;
-    align-items: flex-start;
+    align-items: stretch; /* equal height for both panes */
 }
 body.auth-layout .auth-pane {
-    flex: 1;
+    flex: 1 1 0; /* equal widths */
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+/* Push signup pane content to the bottom so button rows align */
+body.auth-layout .auth-pane:last-child {
+    justify-content: flex-end;
 }
 body.auth-layout .auth-forms-divider {
     width: 1px;
     align-self: stretch;
     background: var(--border);
-    margin: 0 8px;
+    margin: 0;
     flex-shrink: 0;
 }
 .auth-pane-title {
@@ -1219,13 +1252,21 @@ body.auth-layout .auth-forms-divider {
     letter-spacing: 0.8px;
     text-transform: uppercase;
     color: var(--text-muted);
-    padding: 16px 24px 0;
+    padding: 10px 24px 0;
 }
 body.auth-layout .auth-pane-title {
     display: block;
 }
 body.auth-layout #signup-form {
     display: flex !important;
+}
+/* Sign-in form stretches and pushes its button to the bottom
+   so it aligns with the Create Account button on the right */
+body.auth-layout #signin-form {
+    flex: 1;
+}
+body.auth-layout #signin-btn {
+    margin-top: auto;
 }
 
 /* Demo app-shell: same width as auth card, shorter height */
@@ -1255,13 +1296,23 @@ body.auth-layout #signup-form {
     justify-content: center;
     flex-direction: column;
     gap: 10px;
-    background: rgba(15, 17, 23, 0.55);
-    backdrop-filter: blur(2px);
+    background: transparent; /* no tint — content stays fully visible */
     color: var(--text);
     font-size: 13px;
     font-weight: 500;
     text-align: center;
     border-radius: 4px;
+}
+.demo-notice span {
+    background: var(--bg-card);
+    border: 1px solid var(--border-hi);
+    border-radius: 20px;
+    padding: 8px 20px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+    letter-spacing: 0.1px;
+}
+.demo-notice svg {
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.6));
 }
 #app-shell.demo-mode .demo-notice {
     display: flex;
@@ -1303,6 +1354,12 @@ body.auth-layout #signup-form {
     }
     body.auth-layout .auth-card {
         width: min(440px, calc(100vw - 24px));
+    }
+    body.auth-layout .auth-logo-top {
+        display: block;
+    }
+    body.auth-layout .auth-logo-pane {
+        display: none;
     }
     body.auth-layout .auth-switch {
         display: flex;

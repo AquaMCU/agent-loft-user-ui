@@ -11,7 +11,8 @@
      AUTH CARD  (shown when not logged in)
 ════════════════════════════════════════════════════════════════ -->
         <div class="auth-card" id="auth-card">
-            <div class="auth-logo">
+            <!-- Logo shown on narrow screens (single-col mode) -->
+            <div class="auth-logo auth-logo-top">
                 <div class="auth-logo-icon">
                     <svg
                         width="28"
@@ -61,6 +62,45 @@
             <div class="auth-forms-wrap">
                 <!-- ── Sign In pane ── -->
                 <div class="auth-pane">
+                    <!-- Logo shown in dual-col mode, above Sign In -->
+                    <div class="auth-logo auth-logo-pane">
+                        <div class="auth-logo-icon">
+                            <svg
+                                width="28"
+                                height="28"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.8"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <rect
+                                    x="3"
+                                    y="8"
+                                    width="18"
+                                    height="13"
+                                    rx="2"
+                                />
+                                <path d="M9 12h.01M15 12h.01" />
+                                <path d="M9 16h6" />
+                                <path d="M12 8V5" />
+                                <circle
+                                    cx="12"
+                                    cy="4"
+                                    r="1.2"
+                                    fill="currentColor"
+                                    stroke="none"
+                                />
+                            </svg>
+                        </div>
+                        <div>
+                            <h1 class="auth-title">Agent Loft</h1>
+                            <p class="auth-sub">
+                                Your AI agents, managed simply.
+                            </p>
+                        </div>
+                    </div>
                     <div class="auth-pane-title">Sign In</div>
                     <form
                         id="signin-form"
