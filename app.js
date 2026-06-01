@@ -13,6 +13,8 @@ const SSH_URL =
   "https://n8n.agent-loft.com/webhook/51098cf4-ecfd-4db4-8977-db04f01ce2b1";
 const RESTART_URL =
   "https://n8n.agent-loft.com/webhook/dac205df-66e0-4728-90e5-d784cde167af";
+const BACKUP_LIST_URL =
+  "https://n8n.agent-loft.com/webhook/30eaa32f-378a-4963-9d80-533229d25766";
 const BACKUP_URL =
   "https://n8n.agent-loft.com/webhook/30eaa32f-378a-4963-9d80-533229d25766";
 const AGENT_INFO_URL =
@@ -658,7 +660,7 @@ async function loadBackups(uuid) {
   body.innerHTML = '<div class="loading-row"><div class="spinner"></div></div>';
 
   try {
-    const _backupsUrl = `${BACKUP_URL}?uuid=${encodeURIComponent(uuid)}`;
+    const _backupsUrl = `${BACKUP_LIST_URL}?uuid=${encodeURIComponent(uuid)}`;
     dbg("→ List Backups", _backupsUrl);
     const res = await fetch(_backupsUrl);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -667,7 +669,14 @@ async function loadBackups(uuid) {
       data = await res.json();
     } catch (_) {}
     dbg("← List Backups", data);
-    renderBackups(Array.isArray(data) ? data : data ? [data] : []);
+    // Response: { uuid, backup_path, archives: [{name, start, end, id}] }
+    const archives =
+      data && Array.isArray(data.archives)
+        ? data.archives
+        : Array.isArray(data)
+          ? data
+          : [];
+    renderBackups(archives);
   } catch (err) {
     body.innerHTML = `<p class="inline-error">${escHtml(err.message)}</p>`;
   }
@@ -693,17 +702,13 @@ function renderBackups(backups) {
 
   const rows = backups
     .map((b) => {
-      const name = escHtml(b.name || b.id || "Backup");
-      const date = formatDate(
-        b.created_at || b.createdAt || b.date || b.timestamp,
-      );
+      const start = formatBackupDate(b.start);
       const id = escAttr(String(b.id || b.name || ""));
-      const nm = escAttr(String(b.name || b.id || "Backup"));
+      const nm = escAttr(String(b.name || b.id || start));
       return `
         <div class="backup-row">
             <div class="backup-info">
-                <div class="backup-name">${name}</div>
-                <div class="backup-date">${date}</div>
+                <div class="backup-date">${escHtml(start)}</div>
             </div>
             <button class="btn btn-ghost btn-sm"
                     data-backup-id="${id}"
@@ -720,30 +725,22 @@ function renderBackups(backups) {
 
 async function makeBackup() {
   const btn = document.getElementById("make-backup-btn");
-  const origHTML = btn.innerHTML;
-  btn.disabled = true;
-  btn.innerHTML = '<div class="spinner-sm"></div> Creating\u2026';
-
+  btnLoad(btn, "…");
   try {
     dbg("→ Make Backup", BACKUP_URL);
     const res = await fetch(BACKUP_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        uuid: activeUUID,
-        email: currentEmail,
-        action: "make",
-      }),
+      body: JSON.stringify({ uuid: activeUUID }),
     });
     if (!res.ok)
       throw new Error(`Failed to create backup (HTTP ${res.status}).`);
     toast("Backup created successfully!", "success");
-    await loadBackups(activeUUID);
   } catch (err) {
     toast(err.message, "error");
   } finally {
-    btn.disabled = false;
-    btn.innerHTML = origHTML;
+    btnReset(btn);
+    await loadBackups(activeUUID);
   }
 }
 
@@ -767,7 +764,7 @@ async function restoreBackup(backup) {
         uuid: activeUUID,
         email: currentEmail,
         action: "restore",
-        backup_id: backup.id,
+        archive_name: backup.name,
       }),
     });
     if (!res.ok) throw new Error(`Restore failed (HTTP ${res.status}).`);
@@ -836,6 +833,14 @@ function escAttr(s) {
 
 function isValidEmail(s) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+}
+
+// Format backup start "2026-06-01T17:55:07.000000" → "2026-06-01 17:55"
+function formatBackupDate(s) {
+  if (!s) return "—";
+  // Slice to minute precision and swap T for a space
+  const safe = String(s).slice(0, 16).replace("T", " ");
+  return safe.length >= 16 ? safe : "—";
 }
 
 function formatDate(d) {
