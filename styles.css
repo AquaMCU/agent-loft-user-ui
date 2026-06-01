@@ -1182,9 +1182,9 @@ body.auth-layout {
     justify-content: center;
 }
 
-/* Wider auth card for dual-pane layout */
+/* Auth card matches the app-shell width */
 body.auth-layout .auth-card {
-    width: min(820px, calc(100vw - 24px));
+    width: min(1060px, calc(100vw - 16px));
 }
 
 /* Logo visibility: top logo for narrow, pane logo for dual */
@@ -1269,9 +1269,9 @@ body.auth-layout #signin-btn {
     margin-top: auto;
 }
 
-/* Demo app-shell: same width as auth card, shorter height */
+/* Demo app-shell: matches auth card width, shorter height */
 #app-shell.demo-mode {
-    width: min(900px, calc(100vw - 24px));
+    width: min(1060px, calc(100vw - 16px));
     height: min(500px, calc(100vh - 360px));
     flex-shrink: 0;
 }
@@ -1304,15 +1304,15 @@ body.auth-layout #signin-btn {
     border-radius: 4px;
 }
 .demo-notice span {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
     background: var(--bg-card);
     border: 1px solid var(--border-hi);
     border-radius: 20px;
-    padding: 8px 20px;
+    padding: 8px 18px;
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
     letter-spacing: 0.1px;
-}
-.demo-notice svg {
-    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.6));
 }
 #app-shell.demo-mode .demo-notice {
     display: flex;
@@ -1353,7 +1353,7 @@ body.auth-layout #signin-btn {
         display: none !important;
     }
     body.auth-layout .auth-card {
-        width: min(440px, calc(100vw - 24px));
+        width: min(440px, calc(100vw - 16px));
     }
     body.auth-layout .auth-logo-top {
         display: block;
