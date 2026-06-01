@@ -21,7 +21,8 @@ const AGENT_INFO_URL =
   "https://n8n.agent-loft.com/webhook/e01d06a3-14c3-4e4e-830f-7d4be9a5f529";
 const CHAT_URL =
   "https://n8n.agent-loft.com/webhook/a58d00c4-f0c9-40cd-bb50-4f45f0442ef0";
-const REFERRAL_URL = ""; // TODO: set referral webhook URL
+const REFERRAL_URL =
+  "https://n8n.agent-loft.com/webhook/5bb4169d-284a-4006-8952-fcc325da2d22";
 
 /* ─── State ─────────────────────────────────────────────────── */
 let currentEmail = null;
@@ -1004,22 +1005,43 @@ async function sendReferral() {
 
   btnLoad(btn, "Sending\u2026");
   try {
-    if (!REFERRAL_URL) throw new Error("Referral webhook not configured yet.");
-    dbg("→ Referral", REFERRAL_URL);
+    dbg("\u2192 Referral", REFERRAL_URL);
     const res = await fetch(REFERRAL_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ referrer: currentEmail, friend_email: email }),
     });
     if (!res.ok) throw new Error(`Failed to send invite (HTTP ${res.status}).`);
-    toast(
-      "Invite sent! You\u2019ll earn $10 credit when your friend signs up.",
-      "success",
+    const json = await res.json().catch(() => null);
+    dbg("\u2190 Referral", json);
+    const first = Array.isArray(json) ? json[0] : json;
+    const result = first && first.result;
+    const success =
+      typeof result === "string" &&
+      result.toLowerCase().includes("invite send");
+    showReferralResult(
+      success ? result : "This email address has already been claimed.",
+      success,
     );
-    input.value = "";
+    if (success) input.value = "";
   } catch (err) {
     toast(err.message, "error");
   } finally {
     btnReset(btn);
   }
+}
+
+function showReferralResult(text, success = true) {
+  let el = document.getElementById("refer-result");
+  if (!el) {
+    el = document.createElement("p");
+    el.id = "refer-result";
+    el.className = "refer-result";
+    document
+      .getElementById("refer-send-btn")
+      .closest(".refer-input-row")
+      .insertAdjacentElement("afterend", el);
+  }
+  el.textContent = text;
+  el.style.color = success ? "var(--success)" : "var(--warning)";
 }

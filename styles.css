@@ -1167,3 +1167,9 @@ body::before {
 .refer-input-row input:focus {
     border-color: var(--accent);
 }
+.refer-result {
+    font-size: 12px;
+    color: var(--success);
+    margin: 0;
+    line-height: 1.4;
+}
