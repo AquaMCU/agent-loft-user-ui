@@ -187,7 +187,7 @@
                         class="comment-empty"
                         title="Click to edit"
                         onclick="editComment()"
-                        >Comment</span
+                        >Name your Agent</span
                     >
                     <div id="header-comment-edit" style="display: none">
                         <input
@@ -508,6 +508,94 @@
                 <!-- /agent-panel -->
             </div>
             <!-- /app-body -->
+
+            <!-- ── Talk to Us ──────────────────────────────────── -->
+            <div class="talk-wrap" id="talk-wrap">
+                <button
+                    class="talk-toggle"
+                    id="talk-toggle-btn"
+                    onclick="toggleTalk()"
+                >
+                    <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path
+                            d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+                        />
+                    </svg>
+                    Talk to Us
+                    <svg
+                        id="talk-chevron"
+                        width="13"
+                        height="13"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        style="margin-left: auto; transition: transform 0.25s"
+                    >
+                        <polyline points="18 15 12 9 6 15" />
+                    </svg>
+                </button>
+                <div class="talk-panel" id="talk-panel">
+                    <!-- Left: support chat -->
+                    <div class="talk-col talk-chat-col">
+                        <div class="talk-col-title">Support Chat</div>
+                        <div class="chat-msgs" id="chat-msgs"></div>
+                        <div class="chat-input-row">
+                            <input
+                                id="chat-input"
+                                type="text"
+                                placeholder="Type a message…"
+                                onkeydown="handleChatKey(event)"
+                            />
+                            <button
+                                id="chat-send-btn"
+                                class="btn btn-primary btn-sm"
+                                onclick="sendChat()"
+                            >
+                                Send
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Right: refer a friend -->
+                    <div class="talk-col talk-refer-col">
+                        <div class="talk-col-title">Refer a Friend</div>
+                        <p class="refer-desc">
+                            Know someone who'd love an AI agent? When your
+                            friend signs up and mentions your email (<strong
+                                id="refer-own-email"
+                            ></strong
+                            >), you'll receive <strong>$10 USD</strong> credit
+                            on your OpenRouter.ai key we host for you.
+                        </p>
+                        <div class="refer-input-row">
+                            <input
+                                id="refer-email"
+                                type="email"
+                                placeholder="friend@example.com"
+                            />
+                            <button
+                                id="refer-send-btn"
+                                class="btn btn-primary btn-sm"
+                                onclick="sendReferral()"
+                            >
+                                Invite
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- /talk-wrap -->
         </div>
         <!-- /app-shell -->
 

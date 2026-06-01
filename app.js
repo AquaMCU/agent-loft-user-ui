@@ -19,12 +19,17 @@ const BACKUP_URL =
   "https://n8n.agent-loft.com/webhook/30eaa32f-378a-4963-9d80-533229d25766";
 const AGENT_INFO_URL =
   "https://n8n.agent-loft.com/webhook/e01d06a3-14c3-4e4e-830f-7d4be9a5f529";
+const CHAT_URL =
+  "https://n8n.agent-loft.com/webhook/a58d00c4-f0c9-40cd-bb50-4f45f0442ef0";
+const REFERRAL_URL = ""; // TODO: set referral webhook URL
 
 /* ─── State ─────────────────────────────────────────────────── */
 let currentEmail = null;
 let agents = [];
 let activeUUID = null;
 let activeAgentInfo = null;
+let chatId = null; // generated on first panel open
+let talkOpen = false;
 
 /* ─── Debug logger ─────────────────────────────────────────── */
 function dbg(label, data) {
@@ -198,6 +203,20 @@ function doSignOut() {
   currentEmail = null;
   agents = [];
   activeUUID = null;
+  chatId = null;
+  talkOpen = false;
+  const tp = document.getElementById("talk-panel");
+  if (tp) {
+    tp.classList.remove("open");
+  }
+  const chev = document.getElementById("talk-chevron");
+  if (chev) {
+    chev.style.transform = "";
+  }
+  const chatMsgs = document.getElementById("chat-msgs");
+  if (chatMsgs) {
+    chatMsgs.innerHTML = "";
+  }
 
   // Reset signup form state so it's clean on next visit
   document.getElementById("signup-btn").style.display = "";
@@ -359,7 +378,7 @@ function renderComment(text) {
     el.textContent = stripQuotes(text);
     el.classList.remove("comment-empty");
   } else {
-    el.textContent = "Comment";
+    el.textContent = "Name your Agent";
     el.classList.add("comment-empty");
   }
 }
@@ -886,4 +905,121 @@ function showAuthError(id, msg) {
 
 function hideAuthError(id) {
   document.getElementById(id).style.display = "none";
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TALK TO US
+═══════════════════════════════════════════════════════════════ */
+function toggleTalk() {
+  talkOpen = !talkOpen;
+  document.getElementById("talk-panel").classList.toggle("open", talkOpen);
+  document
+    .getElementById("talk-toggle-btn")
+    .classList.toggle("active", talkOpen);
+  const chev = document.getElementById("talk-chevron");
+  chev.style.transform = talkOpen ? "rotate(180deg)" : "";
+
+  if (talkOpen) {
+    if (!chatId) {
+      chatId = String(Math.floor(100000 + Math.random() * 900000));
+      appendChatMsg("bot", "Hi! How can we help you today?");
+    }
+    document.getElementById("refer-own-email").textContent = currentEmail || "";
+    setTimeout(() => document.getElementById("chat-input").focus(), 280);
+  }
+}
+
+function appendChatMsg(from, text) {
+  const msgs = document.getElementById("chat-msgs");
+  const div = document.createElement("div");
+  div.className = `chat-msg chat-msg-${from}`;
+  div.textContent = text;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function handleChatKey(e) {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    sendChat();
+  }
+}
+
+async function sendChat() {
+  const input = document.getElementById("chat-input");
+  const btn = document.getElementById("chat-send-btn");
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  appendChatMsg("user", msg);
+  input.value = "";
+  btnLoad(btn, "…");
+
+  try {
+    dbg("→ Chat", CHAT_URL);
+    const res = await fetch(CHAT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: msg,
+        sessionId: chatId,
+        email: currentEmail,
+      }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    dbg("← Chat", json);
+    const first = Array.isArray(json) ? json[0] : json;
+    const reply =
+      typeof json === "string"
+        ? json
+        : (first &&
+            (first.output ||
+              first.message ||
+              first.reply ||
+              first.response ||
+              first.text)) ||
+          JSON.stringify(json);
+    appendChatMsg("bot", reply);
+  } catch (err) {
+    appendChatMsg("bot", `Sorry, something went wrong (${err.message}).`);
+  } finally {
+    btnReset(btn);
+    document.getElementById("chat-input").focus();
+  }
+}
+
+async function sendReferral() {
+  const input = document.getElementById("refer-email");
+  const btn = document.getElementById("refer-send-btn");
+  const email = input.value.trim();
+  if (!email) {
+    toast("Please enter your friend\u2019s email.", "warning");
+    return;
+  }
+  if (!isValidEmail(email)) {
+    toast("Please enter a valid email address.", "warning");
+    return;
+  }
+
+  btnLoad(btn, "Sending\u2026");
+  try {
+    if (!REFERRAL_URL) throw new Error("Referral webhook not configured yet.");
+    dbg("→ Referral", REFERRAL_URL);
+    const res = await fetch(REFERRAL_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ referrer: currentEmail, friend_email: email }),
+    });
+    if (!res.ok) throw new Error(`Failed to send invite (HTTP ${res.status}).`);
+    toast(
+      "Invite sent! You\u2019ll earn $10 credit when your friend signs up.",
+      "success",
+    );
+    input.value = "";
+  } catch (err) {
+    toast(err.message, "error");
+  } finally {
+    btnReset(btn);
+  }
 }
