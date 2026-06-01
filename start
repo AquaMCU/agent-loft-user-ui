@@ -1,0 +1,21 @@
+#!/bin/bash
+
+
+#!/bin/bash
+
+# Simple static file server with live reload
+# Requires Node.js and live-server
+
+# Check if live-server is installed
+if ! command -v live-server &> /dev/null
+then
+    echo "Installing live-server..."
+    npm install -g live-server
+fi
+
+# Serve the current directory with auto-reload
+echo "Starting live-server on http://localhost:8080 ..."
+live-server .
+
+
+

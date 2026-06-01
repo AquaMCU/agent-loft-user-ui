@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Agent Loft — My Portal</title>
+        <link rel="stylesheet" href="styles.css" />
+    </head>
+    <body>
+        <!-- ═══════════════════════════════════════════════════════════
+     AUTH CARD  (shown when not logged in)
+════════════════════════════════════════════════════════════════ -->
+        <div class="auth-card" id="auth-card">
+            <div class="auth-logo">
+                <div class="auth-logo-icon">
+                    <svg
+                        width="28"
+                        height="28"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <rect x="3" y="8" width="18" height="13" rx="2" />
+                        <path d="M9 12h.01M15 12h.01" />
+                        <path d="M9 16h6" />
+                        <path d="M12 8V5" />
+                        <circle
+                            cx="12"
+                            cy="4"
+                            r="1.2"
+                            fill="currentColor"
+                            stroke="none"
+                        />
+                    </svg>
+                </div>
+                <h1 class="auth-title">Agent Loft</h1>
+                <p class="auth-sub">Your AI agents, managed simply.</p>
+            </div>
+
+            <!-- Sign In / Sign Up toggle -->
+            <div class="auth-switch">
+                <button
+                    class="auth-switch-btn active"
+                    data-tab="signin"
+                    onclick="switchAuthTab('signin')"
+                >
+                    Sign In
+                </button>
+                <button
+                    class="auth-switch-btn"
+                    data-tab="signup"
+                    onclick="switchAuthTab('signup')"
+                >
+                    Sign Up
+                </button>
+            </div>
+
+            <!-- ── Sign In ── -->
+            <form
+                id="signin-form"
+                class="auth-form"
+                onsubmit="
+                    event.preventDefault();
+                    doSignIn();
+                "
+            >
+                <div class="form-group">
+                    <label for="signin-email">Email address</label>
+                    <input
+                        type="email"
+                        id="signin-email"
+                        placeholder="you@example.com"
+                        autocomplete="email"
+                        required
+                    />
+                </div>
+                <div id="signin-error" class="auth-error"></div>
+                <button
+                    type="submit"
+                    id="signin-btn"
+                    class="btn btn-primary btn-block"
+                >
+                    Sign In
+                </button>
+            </form>
+
+            <!-- ── Sign Up ── -->
+            <form
+                id="signup-form"
+                class="auth-form"
+                style="display: none"
+                onsubmit="
+                    event.preventDefault();
+                    doSignUp();
+                "
+            >
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="signup-email">Email address</label>
+                        <input
+                            type="email"
+                            id="signup-email"
+                            placeholder="you@example.com"
+                            autocomplete="email"
+                            required
+                        />
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-password">Password</label>
+                        <input
+                            type="password"
+                            id="signup-password"
+                            placeholder="Min. 8 characters"
+                            autocomplete="new-password"
+                            required
+                        />
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="signup-agent">Agent</label>
+                        <select id="signup-agent">
+                            <option value="hermes">Hermes</option>
+                            <option value="openclaw">OpenClaw</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-location">Loft Location</label>
+                        <select id="signup-location">
+                            <option value="france">
+                                &#127467;&#127479; France
+                            </option>
+                        </select>
+                    </div>
+                </div>
+                <div id="signup-error" class="auth-error"></div>
+                <div id="signup-success" class="auth-success"></div>
+                <button
+                    type="submit"
+                    id="signup-btn"
+                    class="btn btn-primary btn-block"
+                >
+                    Create Account
+                </button>
+            </form>
+        </div>
+        <!-- /auth-card -->
+
+        <!-- ═══════════════════════════════════════════════════════════
+     APP SHELL  (shown when logged in)
+════════════════════════════════════════════════════════════════ -->
+        <div class="app-shell" id="app-shell">
+            <!-- ── Header ───────────────────────────────────────────── -->
+            <header class="app-header">
+                <div class="app-brand">
+                    <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <rect x="3" y="8" width="18" height="13" rx="2" />
+                        <path d="M9 12h.01M15 12h.01" />
+                        <path d="M9 16h6" />
+                        <path d="M12 8V5" />
+                        <circle
+                            cx="12"
+                            cy="4"
+                            r="1.2"
+                            fill="currentColor"
+                            stroke="none"
+                        />
+                    </svg>
+                    Agent Loft
+                </div>
+                <div class="app-user">
+                    <span class="user-pill">
+                        <span class="pulse-dot"></span>
+                        <span id="user-email-label">—</span>
+                    </span>
+                    <button class="btn btn-ghost btn-sm" onclick="doSignOut()">
+                        <svg
+                            width="13"
+                            height="13"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                            <polyline points="16 17 21 12 16 7" />
+                            <line x1="21" y1="12" x2="9" y2="12" />
+                        </svg>
+                        Sign Out
+                    </button>
+                </div>
+            </header>
+
+            <!-- ── Agent tabs ────────────────────────────────────────── -->
+            <div class="agent-tabs-bar" id="agent-tabs-bar">
+                <div class="tabs-loading">
+                    <div class="spinner"></div>
+                    Loading agents&hellip;
+                </div>
+            </div>
+
+            <!-- ── Body ──────────────────────────────────────────────── -->
+            <div class="app-body">
+                <!-- No agents state -->
+                <div id="no-agents" class="empty-center" style="display: none">
+                    <svg
+                        width="52"
+                        height="52"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.4"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <rect x="3" y="8" width="18" height="13" rx="2" />
+                        <path d="M9 12h.01M15 12h.01" />
+                        <path d="M9 16h6" />
+                        <path d="M12 8V5" />
+                        <circle
+                            cx="12"
+                            cy="4"
+                            r="1.2"
+                            fill="currentColor"
+                            stroke="none"
+                        />
+                    </svg>
+                    <p>No agents found for your account.</p>
+                    <p
+                        class="text-muted"
+                        style="font-size: 12px; margin-top: 2px"
+                    >
+                        Sign out and use Sign Up to get your first agent.
+                    </p>
+                </div>
+
+                <!-- Agent panel (one per agent, shown for active tab) -->
+                <div id="agent-panel" style="display: none">
+                    <div class="content-grid">
+                        <!-- ── LEFT column ─────────────────────────── -->
+                        <div class="content-col">
+                            <!-- API Keys card -->
+                            <div class="card">
+                                <div class="card-header">
+                                    <span class="card-title">
+                                        <svg
+                                            width="14"
+                                            height="14"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                        >
+                                            <path
+                                                d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778
+                                             5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3
+                                             L22 7l-3-3m-3.5 3.5L19 4"
+                                            />
+                                        </svg>
+                                        API Keys
+                                    </span>
+                                </div>
+                                <div id="keys-body">
+                                    <div class="loading-row">
+                                        <div class="spinner"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- SSH Key card -->
+                            <div class="card">
+                                <div class="card-header">
+                                    <span class="card-title">
+                                        <svg
+                                            width="14"
+                                            height="14"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                        >
+                                            <rect
+                                                x="3"
+                                                y="11"
+                                                width="18"
+                                                height="11"
+                                                rx="2"
+                                            />
+                                            <path
+                                                d="M7 11V7a5 5 0 0 1 10 0v4"
+                                            />
+                                        </svg>
+                                        SSH Key
+                                    </span>
+                                </div>
+                                <div class="ssh-wrap">
+                                    <textarea
+                                        id="ssh-input"
+                                        rows="2"
+                                        placeholder="Paste your public SSH key (ssh-rsa AAAA… or ssh-ed25519 AAAA…)"
+                                    ></textarea>
+                                    <button
+                                        id="ssh-save-btn"
+                                        class="btn btn-ghost"
+                                        onclick="saveSSHKey()"
+                                    >
+                                        Save
+                                    </button>
+                                </div>
+                                <p class="ssh-hint">
+                                    Your current key is stored securely. Enter a
+                                    new key above to replace it.
+                                </p>
+                                <div class="ssh-cmd-row">
+                                    <code
+                                        id="ssh-cmd-text"
+                                        class="ssh-cmd-code"
+                                    ></code>
+                                    <button
+                                        class="btn btn-ghost btn-sm ssh-copy-btn"
+                                        onclick="copySSHCommand(this)"
+                                    >
+                                        <svg
+                                            width="12"
+                                            height="12"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2.5"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                        >
+                                            <rect
+                                                x="9"
+                                                y="9"
+                                                width="13"
+                                                height="13"
+                                                rx="2"
+                                            />
+                                            <path
+                                                d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+                                            />
+                                        </svg>
+                                        Copy
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Server Actions card -->
+                            <div class="card">
+                                <div class="card-header">
+                                    <span class="card-title">
+                                        <svg
+                                            width="14"
+                                            height="14"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                        >
+                                            <polygon
+                                                points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"
+                                            />
+                                        </svg>
+                                        Server Actions
+                                    </span>
+                                    <button
+                                        id="restart-btn"
+                                        class="btn btn-danger"
+                                        onclick="doRestart()"
+                                    >
+                                        <svg
+                                            width="13"
+                                            height="13"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2.5"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                        >
+                                            <path d="M23 4v6h-6" />
+                                            <path d="M1 20v-6h6" />
+                                            <path
+                                                d="M3.51 9a9 9 0 0 1 14.36-3.36L23 10
+                                             M1 14l5.13 4.36A9 9 0 0 0 20.49 15"
+                                            />
+                                        </svg>
+                                        Restart Server
+                                    </button>
+                                </div>
+                                <div id="server-info-body">
+                                    <div class="loading-row">
+                                        <div class="spinner"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- /content-col left -->
+
+                        <!-- ── RIGHT column ────────────────────────── -->
+                        <div class="content-col">
+                            <!-- Backups card -->
+                            <div class="card card-full">
+                                <div class="card-header">
+                                    <span class="card-title">
+                                        <svg
+                                            width="14"
+                                            height="14"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                        >
+                                            <path
+                                                d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+                                            />
+                                            <polyline points="17 8 12 3 7 8" />
+                                            <line
+                                                x1="12"
+                                                y1="3"
+                                                x2="12"
+                                                y2="15"
+                                            />
+                                        </svg>
+                                        Backups
+                                    </span>
+                                    <button
+                                        id="make-backup-btn"
+                                        class="btn btn-ghost btn-sm"
+                                        onclick="makeBackup()"
+                                    >
+                                        <svg
+                                            width="12"
+                                            height="12"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2.5"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                        >
+                                            <line
+                                                x1="12"
+                                                y1="5"
+                                                x2="12"
+                                                y2="19"
+                                            />
+                                            <line
+                                                x1="5"
+                                                y1="12"
+                                                x2="19"
+                                                y2="12"
+                                            />
+                                        </svg>
+                                        Make Backup
+                                    </button>
+                                </div>
+                                <div id="backups-body">
+                                    <div class="loading-row">
+                                        <div class="spinner"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- /content-col right -->
+                    </div>
+                    <!-- /content-grid -->
+                </div>
+                <!-- /agent-panel -->
+            </div>
+            <!-- /app-body -->
+        </div>
+        <!-- /app-shell -->
+
+        <!-- ═══════════════════════════════════════════════════════════
+     CONFIRM DIALOG
+════════════════════════════════════════════════════════════════ -->
+        <div id="confirm-backdrop" class="modal-backdrop">
+            <div class="modal">
+                <div class="modal-header">
+                    <span class="modal-title" id="confirm-title">Confirm</span>
+                </div>
+                <div class="modal-body">
+                    <p id="confirm-message"></p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-ghost" onclick="confirmClose(false)">
+                        Cancel
+                    </button>
+                    <button
+                        id="confirm-ok-btn"
+                        class="btn btn-danger"
+                        onclick="confirmClose(true)"
+                    >
+                        Confirm
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════
+     TOAST CONTAINER
+════════════════════════════════════════════════════════════════ -->
+        <div id="toast-container"></div>
+
+        <script src="app.js"></script>
+    </body>
+</html>
