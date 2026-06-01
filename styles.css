@@ -1270,6 +1270,11 @@ body.auth-layout .pricing-badge {
     font-weight: 500;
     color: var(--text-muted);
 }
+.pricing-term {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.2px;
+}
 .pricing-bonus {
     display: flex;
     align-items: center;

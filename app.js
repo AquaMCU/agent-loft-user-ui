@@ -106,10 +106,15 @@ function switchAuthTab(tab) {
 ═══════════════════════════════════════════════════════════════ */
 async function doSignIn() {
   const email = document.getElementById("signin-email").value.trim();
+  const password = document.getElementById("signin-password").value;
   hideAuthError("signin-error");
 
   if (!isValidEmail(email)) {
     showAuthError("signin-error", "Please enter a valid email address.");
+    return;
+  }
+  if (!password) {
+    showAuthError("signin-error", "Please enter your password.");
     return;
   }
 
@@ -117,8 +122,8 @@ async function doSignIn() {
   btnLoad(btn, "Signing in\u2026");
 
   try {
-    const _agentsUrl = `${AGENTS_URL}?email=${encodeURIComponent(email)}`;
-    dbg("→ List Agents (sign-in)", _agentsUrl);
+    const _agentsUrl = `${AGENTS_URL}?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`;
+    dbg("\u2192 List Agents (sign-in)", _agentsUrl);
     const res = await fetch(_agentsUrl);
     if (!res.ok)
       throw new Error(
