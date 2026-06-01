@@ -40,7 +40,7 @@
                 <p class="auth-sub">Your AI agents, managed simply.</p>
             </div>
 
-            <!-- Sign In / Sign Up toggle -->
+            <!-- Sign In / Sign Up toggle (used on narrow screens) -->
             <div class="auth-switch">
                 <button
                     class="auth-switch-btn active"
@@ -58,94 +58,107 @@
                 </button>
             </div>
 
-            <!-- ── Sign In ── -->
-            <form
-                id="signin-form"
-                class="auth-form"
-                onsubmit="
-                    event.preventDefault();
-                    doSignIn();
-                "
-            >
-                <div class="form-group">
-                    <label for="signin-email">Email address</label>
-                    <input
-                        type="email"
-                        id="signin-email"
-                        placeholder="you@example.com"
-                        autocomplete="email"
-                        required
-                    />
+            <div class="auth-forms-wrap">
+                <!-- ── Sign In pane ── -->
+                <div class="auth-pane">
+                    <div class="auth-pane-title">Sign In</div>
+                    <form
+                        id="signin-form"
+                        class="auth-form"
+                        onsubmit="
+                            event.preventDefault();
+                            doSignIn();
+                        "
+                    >
+                        <div class="form-group">
+                            <label for="signin-email">Email address</label>
+                            <input
+                                type="email"
+                                id="signin-email"
+                                placeholder="you@example.com"
+                                autocomplete="email"
+                                required
+                            />
+                        </div>
+                        <div id="signin-error" class="auth-error"></div>
+                        <button
+                            type="submit"
+                            id="signin-btn"
+                            class="btn btn-primary btn-block"
+                        >
+                            Sign In
+                        </button>
+                    </form>
                 </div>
-                <div id="signin-error" class="auth-error"></div>
-                <button
-                    type="submit"
-                    id="signin-btn"
-                    class="btn btn-primary btn-block"
-                >
-                    Sign In
-                </button>
-            </form>
-
-            <!-- ── Sign Up ── -->
-            <form
-                id="signup-form"
-                class="auth-form"
-                style="display: none"
-                onsubmit="
-                    event.preventDefault();
-                    doSignUp();
-                "
-            >
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="signup-email">Email address</label>
-                        <input
-                            type="email"
-                            id="signup-email"
-                            placeholder="you@example.com"
-                            autocomplete="email"
-                            required
-                        />
-                    </div>
-                    <div class="form-group">
-                        <label for="signup-password">Password</label>
-                        <input
-                            type="password"
-                            id="signup-password"
-                            placeholder="Min. 8 characters"
-                            autocomplete="new-password"
-                            required
-                        />
-                    </div>
+                <!-- /auth-pane signin -->
+                <div class="auth-forms-divider"></div>
+                <!-- ── Sign Up pane ── -->
+                <div class="auth-pane">
+                    <div class="auth-pane-title">Sign Up</div>
+                    <form
+                        id="signup-form"
+                        class="auth-form"
+                        style="display: none"
+                        onsubmit="
+                            event.preventDefault();
+                            doSignUp();
+                        "
+                    >
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="signup-email">Email address</label>
+                                <input
+                                    type="email"
+                                    id="signup-email"
+                                    placeholder="you@example.com"
+                                    autocomplete="email"
+                                    required
+                                />
+                            </div>
+                            <div class="form-group">
+                                <label for="signup-password">Password</label>
+                                <input
+                                    type="password"
+                                    id="signup-password"
+                                    placeholder="Min. 8 characters"
+                                    autocomplete="new-password"
+                                    required
+                                />
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="signup-agent">Agent</label>
+                                <select id="signup-agent">
+                                    <option value="hermes">Hermes</option>
+                                    <option value="openclaw">OpenClaw</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="signup-location"
+                                    >Loft Location</label
+                                >
+                                <select id="signup-location">
+                                    <option value="france">
+                                        &#127467;&#127479; France
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="signup-error" class="auth-error"></div>
+                        <div id="signup-success" class="auth-success"></div>
+                        <button
+                            type="submit"
+                            id="signup-btn"
+                            class="btn btn-primary btn-block"
+                        >
+                            Create Account
+                        </button>
+                    </form>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="signup-agent">Agent</label>
-                        <select id="signup-agent">
-                            <option value="hermes">Hermes</option>
-                            <option value="openclaw">OpenClaw</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="signup-location">Loft Location</label>
-                        <select id="signup-location">
-                            <option value="france">
-                                &#127467;&#127479; France
-                            </option>
-                        </select>
-                    </div>
-                </div>
-                <div id="signup-error" class="auth-error"></div>
-                <div id="signup-success" class="auth-success"></div>
-                <button
-                    type="submit"
-                    id="signup-btn"
-                    class="btn btn-primary btn-block"
-                >
-                    Create Account
-                </button>
-            </form>
+                <!-- /auth-pane signup -->
+            </div>
+            <!-- /auth-forms-wrap -->
         </div>
         <!-- /auth-card -->
 

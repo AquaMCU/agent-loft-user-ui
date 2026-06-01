@@ -1174,14 +1174,64 @@ body::before {
     line-height: 1.4;
 }
 
-/* ─── Auth-layout: login card + demo shell side by side ──────── */
+/* ─── Auth-layout: auth card ABOVE demo shell, stacked ──────── */
 body.auth-layout {
-    gap: 20px;
+    flex-direction: column;
+    gap: 14px;
     align-items: center;
+    justify-content: center;
 }
 
+/* Wider auth card for dual-pane layout */
+body.auth-layout .auth-card {
+    width: min(900px, calc(100vw - 24px));
+}
+
+/* Hide the tab toggle when both panes are visible */
+body.auth-layout .auth-switch {
+    display: none;
+}
+
+/* Dual-pane form wrapper */
+.auth-forms-wrap {
+    display: block;
+}
+body.auth-layout .auth-forms-wrap {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+}
+body.auth-layout .auth-pane {
+    flex: 1;
+    min-width: 0;
+}
+body.auth-layout .auth-forms-divider {
+    width: 1px;
+    align-self: stretch;
+    background: var(--border);
+    margin: 0 8px;
+    flex-shrink: 0;
+}
+.auth-pane-title {
+    display: none;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 16px 24px 0;
+}
+body.auth-layout .auth-pane-title {
+    display: block;
+}
+body.auth-layout #signup-form {
+    display: flex !important;
+}
+
+/* Demo app-shell: same width as auth card, shorter height */
 #app-shell.demo-mode {
-    width: min(600px, calc(100vw - 490px));
+    width: min(900px, calc(100vw - 24px));
+    height: min(500px, calc(100vh - 360px));
     flex-shrink: 0;
 }
 
@@ -1191,7 +1241,6 @@ body.auth-layout {
     pointer-events: none;
     user-select: none;
 }
-
 #app-shell.demo-mode .app-body {
     pointer-events: none;
     user-select: none;
@@ -1214,14 +1263,57 @@ body.auth-layout {
     text-align: center;
     border-radius: 4px;
 }
-
 #app-shell.demo-mode .demo-notice {
     display: flex;
 }
 
-/* On screens too narrow to show both, hide the demo shell */
-@media (max-width: 1080px) {
+/* ─── Login animations ───────────────────────────────────────── */
+@keyframes authLeave {
+    to {
+        opacity: 0;
+        transform: translateY(-28px);
+        filter: blur(8px);
+    }
+}
+.auth-card.auth-leaving {
+    animation: authLeave 0.3s ease-in forwards;
+    pointer-events: none;
+}
+
+@keyframes shellEnter {
+    from {
+        opacity: 0;
+        transform: translateY(22px);
+        filter: blur(10px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+        filter: none;
+    }
+}
+#app-shell.app-entering {
+    animation: shellEnter 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* On screens too narrow for the dual layout, fall back to single column */
+@media (max-width: 960px) {
     #app-shell.demo-mode {
         display: none !important;
+    }
+    body.auth-layout .auth-card {
+        width: min(440px, calc(100vw - 24px));
+    }
+    body.auth-layout .auth-switch {
+        display: flex;
+    }
+    body.auth-layout .auth-forms-wrap {
+        display: block;
+    }
+    body.auth-layout #signup-form {
+        display: none !important;
+    }
+    body.auth-layout .auth-pane-title {
+        display: none;
     }
 }

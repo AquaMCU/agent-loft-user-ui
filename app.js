@@ -238,11 +238,24 @@ function showAuth() {
 }
 
 function showApp() {
-  document.getElementById("auth-card").style.display = "none";
-  document.getElementById("app-shell").style.display = "flex";
-  document.getElementById("app-shell").classList.remove("demo-mode");
-  document.body.classList.remove("auth-layout");
-  document.getElementById("user-email-label").textContent = currentEmail;
+  const authCard = document.getElementById("auth-card");
+  const shell = document.getElementById("app-shell");
+
+  // 1. Slide auth card upward + blur out
+  authCard.classList.add("auth-leaving");
+
+  setTimeout(() => {
+    authCard.style.display = "none";
+    authCard.classList.remove("auth-leaving");
+    document.body.classList.remove("auth-layout");
+
+    // 2. Wake up the shell (remove demo dimming, play entry animation)
+    shell.classList.remove("demo-mode");
+    shell.classList.add("app-entering");
+    document.getElementById("user-email-label").textContent = currentEmail;
+
+    setTimeout(() => shell.classList.remove("app-entering"), 620);
+  }, 310);
 }
 
 function populateDemoShell() {
