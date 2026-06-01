@@ -4,7 +4,7 @@
 
 /* ─── Webhook URLs ──────────────────────────────────────────── */
 const SIGNUP_URL =
-  "https://n8n.agent-loft.com/webhook/d32eb831-b71d-46a5-b4f0-4fbbc6b54226";
+  "https://n8n.agent-loft.com/webhook/4de196b7-2ad2-4f9a-9b4d-dc8d3b30865b";
 const AGENTS_URL =
   "https://n8n.agent-loft.com/webhook/73b31740-d2c7-46d7-ab71-7a3fef5f77ff";
 const KEYS_URL =
@@ -168,29 +168,56 @@ async function doSignUp() {
   const btn = document.getElementById("signup-btn");
   btnLoad(btn, "Creating account\u2026");
 
+  // Open a blank tab NOW (synchronous, while the user gesture is still active)
+  // so the browser doesn't treat it as a blocked popup after the await.
+  const stripeTab = window.open("", "_blank");
+  console.log("[SignUp] stripeTab opened:", stripeTab);
+
   try {
+    const payload = { email, password, agent, server: location };
+    console.log("[SignUp] → POST", SIGNUP_URL, payload);
     const res = await fetch(SIGNUP_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, agent, location }),
+      body: JSON.stringify(payload),
     });
+    console.log("[SignUp] response status:", res.status, res.ok);
     if (!res.ok) throw new Error("Sign up failed. Please try again later.");
+
+    // Webhook returns a plain-text URL — read as text, not JSON
+    const rawText = (await res.text()).trim();
+    console.log("[SignUp] raw response text:", rawText);
+    const checkoutUrl = rawText.startsWith("http") ? rawText : null;
+    console.log("[SignUp] checkoutUrl:", checkoutUrl);
+
+    // Navigate the pre-opened tab to the Stripe URL
+    if (checkoutUrl && stripeTab && !stripeTab.closed) {
+      stripeTab.location.href = checkoutUrl;
+    } else if (stripeTab && !stripeTab.closed) {
+      stripeTab.close();
+    }
 
     // Show success — do NOT auto-login (user pays via Stripe first)
     const successEl = document.getElementById("signup-success");
     successEl.innerHTML = `
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2.5"
-                 stroke-linecap="round" stroke-linejoin="round"
-                 style="flex-shrink:0">
-                <polyline points="20 6 9 17 4 12"/>
-            </svg>
-            <span>Request received! Check your inbox — you will get an email from
-            <strong>Stripe</strong> to complete billing setup before your agent is activated.</span>
-        `;
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2.5"
+           stroke-linecap="round" stroke-linejoin="round"
+           style="flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>
+      <span>
+        Account created! ${
+          checkoutUrl
+            ? `A <strong>Stripe</strong> checkout tab has opened.
+               If it didn\u2019t appear,
+               <a href="${escAttr(checkoutUrl)}" target="_blank" rel="noopener"
+               style="color:var(--success)">click here to complete payment</a>.`
+            : `Check your inbox \u2014 you will receive a <strong>Stripe</strong> billing link to activate your agent.`
+        }
+      </span>`;
     successEl.style.display = "flex";
     btn.style.display = "none";
   } catch (err) {
+    if (stripeTab) stripeTab.close();
     showAuthError("signup-error", err.message);
     btnReset(btn);
   }
