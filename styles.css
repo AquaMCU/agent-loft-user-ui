@@ -1173,3 +1173,55 @@ body::before {
     margin: 0;
     line-height: 1.4;
 }
+
+/* ─── Auth-layout: login card + demo shell side by side ──────── */
+body.auth-layout {
+    gap: 20px;
+    align-items: center;
+}
+
+#app-shell.demo-mode {
+    width: min(600px, calc(100vw - 490px));
+    flex-shrink: 0;
+}
+
+#app-shell.demo-mode .app-header,
+#app-shell.demo-mode .agent-tabs-bar {
+    opacity: 0.55;
+    pointer-events: none;
+    user-select: none;
+}
+
+#app-shell.demo-mode .app-body {
+    pointer-events: none;
+    user-select: none;
+}
+
+.demo-notice {
+    display: none;
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 10px;
+    background: rgba(15, 17, 23, 0.55);
+    backdrop-filter: blur(2px);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+    text-align: center;
+    border-radius: 4px;
+}
+
+#app-shell.demo-mode .demo-notice {
+    display: flex;
+}
+
+/* On screens too narrow to show both, hide the demo shell */
+@media (max-width: 1080px) {
+    #app-shell.demo-mode {
+        display: none !important;
+    }
+}

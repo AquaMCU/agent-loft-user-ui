@@ -231,13 +231,92 @@ function doSignOut() {
 /* ─── View switching ────────────────────────────────────────── */
 function showAuth() {
   document.getElementById("auth-card").style.display = "";
-  document.getElementById("app-shell").style.display = "none";
+  document.getElementById("app-shell").style.display = "flex";
+  document.getElementById("app-shell").classList.add("demo-mode");
+  document.body.classList.add("auth-layout");
+  populateDemoShell();
 }
 
 function showApp() {
   document.getElementById("auth-card").style.display = "none";
   document.getElementById("app-shell").style.display = "flex";
+  document.getElementById("app-shell").classList.remove("demo-mode");
+  document.body.classList.remove("auth-layout");
   document.getElementById("user-email-label").textContent = currentEmail;
+}
+
+function populateDemoShell() {
+  // Header
+  document.getElementById("user-email-label").textContent = "preview";
+  renderComment("My AI Assistant");
+
+  // Agent tab
+  document.getElementById("agent-tabs-bar").innerHTML = `
+    <button class="agent-tab active">
+      <span class="agent-tab-dot"></span>
+      <span>hermes</span>
+      <span class="agent-tab-badge">EU</span>
+    </button>`;
+
+  // Show agent panel with demo data
+  hide("no-agents");
+  document.getElementById("agent-panel").style.display = "flex";
+
+  // API Keys
+  document.getElementById("keys-body").innerHTML = `
+    <div class="key-row">
+      <div class="key-info">
+        <div class="key-name">Default Key
+          <span style="font-size:10px;font-weight:500;padding:1px 7px;border-radius:10px;
+            background:#0e2e1c;color:var(--success);margin-left:6px;vertical-align:middle;">Active</span>
+        </div>
+        <code class="key-label">sk-or-v1-demo-xxxxxxxxxxxxxxxxxxxx</code>
+        <div class="key-stats">
+          <span><span class="key-stat-val">350</span>
+          <span class="text-muted"> / 500 credits remaining</span></span>
+          <span class="sep-dot">&middot;</span>
+          <span class="text-muted">Expires Dec 31, 2026</span>
+        </div>
+        <div class="prog-wrap"><div class="prog-bar prog-low" style="width:30%"></div></div>
+      </div>
+      <button class="btn btn-primary btn-sm">Buy Credits</button>
+    </div>`;
+
+  // SSH command
+  document.getElementById("ssh-cmd-text").textContent =
+    "ssh root@hermes.agent-loft.com -p 2201";
+
+  // Server info
+  document.getElementById("server-info-body").innerHTML = `
+    <div class="server-info-row">
+      <span class="server-info-label">Agent Type</span>
+      <span class="server-info-val">Hermes</span>
+    </div>
+    <div class="server-info-row">
+      <span class="server-info-label">Dashboard</span>
+      <span class="server-info-val"><a href="#" class="server-info-link" onclick="return false">hermes.agent-loft.com</a></span>
+    </div>
+    <div class="server-info-row">
+      <span class="server-info-label">SSH Port</span>
+      <span class="server-info-val">2201</span>
+    </div>
+    <div class="server-info-row">
+      <span class="server-info-label">Created</span>
+      <span class="server-info-val">2026-01-01</span>
+    </div>`;
+
+  // Backups
+  document.getElementById("backups-body").innerHTML = `
+    <div class="backups-list">
+      <div class="backup-row">
+        <div class="backup-info"><div class="backup-date">2026-05-30 09:12</div></div>
+        <button class="btn btn-ghost btn-sm">Restore</button>
+      </div>
+      <div class="backup-row">
+        <div class="backup-info"><div class="backup-date">2026-05-31 14:47</div></div>
+        <button class="btn btn-ghost btn-sm">Restore</button>
+      </div>
+    </div>`;
 }
 
 /* ═══════════════════════════════════════════════════════════════
