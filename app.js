@@ -297,7 +297,9 @@ function selectAgent(uuid) {
   document.getElementById("ssh-input").placeholder =
     "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022 (enter new key to update)";
 
-  // SSH command — placeholder until loadAgentInfo fills the port
+  // Reset comment + SSH command — placeholders until loadAgentInfo resolves
+  cancelComment();
+  renderComment("");
   document.getElementById("ssh-cmd-text").textContent =
     `ssh root@${uuid}.agent-loft.com -p …`;
 
@@ -321,12 +323,9 @@ async function loadAgentInfo(uuid) {
   activeAgentInfo = null;
 
   try {
-    dbg("→ Agent Info", AGENT_INFO_URL);
-    const res = await fetch(AGENT_INFO_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ uuid }),
-    });
+    const _infoUrl = `${AGENT_INFO_URL}?uuid=${encodeURIComponent(uuid)}`;
+    dbg("→ Agent Info", _infoUrl);
+    const res = await fetch(_infoUrl);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     dbg("← Agent Info", json);
@@ -340,6 +339,7 @@ async function loadAgentInfo(uuid) {
 
     activeAgentInfo = info;
     renderAgentInfo(info);
+    renderComment(info.comment);
 
     // Update SSH command with real port from ssh_port field
     const port = stripQuotes(info.ssh_port);
@@ -350,23 +350,102 @@ async function loadAgentInfo(uuid) {
   }
 }
 
+/* ─── Header comment ────────────────────────────────────────── */
+function renderComment(text) {
+  const el = document.getElementById("header-comment-display");
+  if (text && text.trim()) {
+    el.textContent = stripQuotes(text);
+    el.classList.remove("comment-empty");
+  } else {
+    el.textContent = "Comment";
+    el.classList.add("comment-empty");
+  }
+}
+
+function editComment() {
+  const display = document.getElementById("header-comment-display");
+  const edit = document.getElementById("header-comment-edit");
+  const input = document.getElementById("header-comment-input");
+  const current = display.classList.contains("comment-empty")
+    ? ""
+    : display.textContent;
+  input.value = current;
+  display.style.display = "none";
+  edit.style.display = "flex";
+  input.focus();
+  input.select();
+}
+
+function cancelComment() {
+  document.getElementById("header-comment-display").style.display = "";
+  document.getElementById("header-comment-edit").style.display = "none";
+}
+
+function handleCommentKey(e) {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    saveComment();
+  }
+  if (e.key === "Escape") cancelComment();
+}
+
+async function saveComment() {
+  const input = document.getElementById("header-comment-input");
+  const btn = document.getElementById("comment-save-btn");
+  const text = input.value.trim();
+  btnLoad(btn, "Saving…");
+  try {
+    dbg("→ Save Comment", AGENT_INFO_URL);
+    const res = await fetch(AGENT_INFO_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ uuid: activeUUID, comment: text }),
+    });
+    if (!res.ok)
+      throw new Error(`Failed to save comment (HTTP ${res.status}).`);
+    renderComment(text);
+    cancelComment();
+    toast("Comment saved.", "success");
+  } catch (err) {
+    toast(err.message, "error");
+  } finally {
+    btnReset(btn);
+  }
+}
+
 function renderAgentInfo(info) {
   const body = document.getElementById("server-info-body");
-  const fields = [
-    { label: "Agent Type", value: stripQuotes(info.agent) },
-    { label: "Domain", value: stripQuotes(info.domain) },
-    { label: "SSH Port", value: stripQuotes(info.ssh_port) },
-    { label: "Created", value: stripQuotes(info.created) },
-  ];
-  body.innerHTML = fields
-    .map(
-      ({ label, value }) => `
-    <div class="server-info-row">
-      <span class="server-info-label">${escHtml(label)}</span>
-      <span class="server-info-val">${escHtml(value)}</span>
+  const domain = stripQuotes(info.domain);
+  const domainHref =
+    domain !== "—"
+      ? domain.startsWith("http")
+        ? domain
+        : `https://${domain}`
+      : null;
+
+  const rows = [
+    `<div class="server-info-row">
+      <span class="server-info-label">Agent Type</span>
+      <span class="server-info-val">${escHtml(stripQuotes(info.agent))}</span>
     </div>`,
-    )
-    .join("");
+    `<div class="server-info-row">
+      <span class="server-info-label">Dashboard</span>
+      <span class="server-info-val">${
+        domainHref
+          ? `<a href="${escAttr(domainHref)}" target="_blank" rel="noopener" class="server-info-link">${escHtml(domain)}</a>`
+          : escHtml(domain)
+      }</span>
+    </div>`,
+    `<div class="server-info-row">
+      <span class="server-info-label">SSH Port</span>
+      <span class="server-info-val">${escHtml(stripQuotes(info.ssh_port))}</span>
+    </div>`,
+    `<div class="server-info-row">
+      <span class="server-info-label">Created</span>
+      <span class="server-info-val">${escHtml(stripQuotes(info.created))}</span>
+    </div>`,
+  ];
+  body.innerHTML = rows.join("");
 }
 
 /* ═══════════════════════════════════════════════════════════════

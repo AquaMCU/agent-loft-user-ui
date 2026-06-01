@@ -180,6 +180,39 @@
                     </svg>
                     Agent Loft
                 </div>
+                <!-- ── Header comment (centre) ───────────────────── -->
+                <div class="header-comment" id="header-comment-wrap">
+                    <span
+                        id="header-comment-display"
+                        class="comment-empty"
+                        title="Click to edit"
+                        onclick="editComment()"
+                        >Comment</span
+                    >
+                    <div id="header-comment-edit" style="display: none">
+                        <input
+                            id="header-comment-input"
+                            type="text"
+                            maxlength="140"
+                            placeholder="Add a comment…"
+                            onkeydown="handleCommentKey(event)"
+                        />
+                        <button
+                            id="comment-save-btn"
+                            class="btn btn-ghost btn-sm"
+                            onclick="saveComment()"
+                        >
+                            Save
+                        </button>
+                        <button
+                            class="btn btn-ghost btn-sm"
+                            onclick="cancelComment()"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                </div>
+
                 <div class="app-user">
                     <span class="user-pill">
                         <span class="pulse-dot"></span>
