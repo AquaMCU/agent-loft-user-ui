@@ -3,20 +3,32 @@
     "name": "ODOO Community",
     "fields": [
       {
-        "label": "API Key",
-        "key": "api_key",
-        "type": "password",
-        "placeholder": "sk-or-v1-..."
+        "label": "Site URL",
+        "key": "site_url",
+        "type": "text",
+        "placeholder": "https://ODOO4projects.com"
       },
       {
         "label": "Username",
         "key": "username",
         "type": "text",
+        "placeholder": "admin"
+      },
+      {
+        "label": "Password / API Key",
+        "key": "api_key",
+        "type": "password",
         "placeholder": ""
+      },
+      {
+        "label": "Database Name",
+        "key": "db_name",
+        "type": "text",
+        "placeholder": "mycompany"
       }
     ],
     "signup_url": "https://ODOO4projects.com",
     "signup_label": "Need ODOO Community hosting? Sign up here",
-    "prompt": "Create an ODOO Skill and use the credentials. key {{api_key}}."
+    "prompt": "Create an Odoo skill.\nRead https://www.odoo.com/documentation/19.0/de/developer/reference/external_api.html\nand use the credentials:\n- Site URL: {site_url}\n- Username: {username}\n- Password / API Key: {api_key}\n- Database Name: {db_name}"
   }
 ]
