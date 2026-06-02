@@ -23,6 +23,10 @@ const CHAT_URL =
   "https://n8n.agent-loft.com/webhook/a58d00c4-f0c9-40cd-bb50-4f45f0442ef0";
 const REFERRAL_URL =
   "https://n8n.agent-loft.com/webhook/5bb4169d-284a-4006-8952-fcc325da2d22";
+const CONTRACT_URL =
+  "https://n8n.agent-loft.com/webhook/18591766-147e-4bcb-b9ac-b0f9a92e74bf";
+const CONTRACT_EXTEND_URL = "https://agent-loft.com"; // ← replace with Stripe payment link
+const CONTRACT_CANCEL_URL = "https://agent-loft.com"; // ← replace with Stripe cancellation link
 
 /* ─── State ─────────────────────────────────────────────────── */
 let currentEmail = null;
@@ -345,13 +349,26 @@ function populateDemoShell() {
       <span class="server-info-label">Dashboard</span>
       <span class="server-info-val"><a href="#" class="server-info-link" onclick="return false">hermes.agent-loft.com</a></span>
     </div>
-    <div class="server-info-row">
-      <span class="server-info-label">SSH Port</span>
-      <span class="server-info-val">2201</span>
+    <div class="server-info-row server-info-row--copy" title="Click to copy">
+      <span class="server-info-label">SSH Access</span>
+      <span class="server-info-val server-info-copyval">ssh root@hermes.agent-loft.com -p 2201</span>
     </div>
     <div class="server-info-row">
       <span class="server-info-label">Created</span>
       <span class="server-info-val">2026-01-01</span>
+    </div>`;
+
+  // Contract
+  const demoDot = document.getElementById("contract-status-dot");
+  demoDot.className = "contract-dot contract-dot--green";
+  demoDot.style.visibility = "visible";
+  document.getElementById("contract-body").innerHTML = `
+    <div class="contract-row">
+      <div class="contract-info">
+        <span class="contract-type">Auto - Monthly</span>
+        <span class="contract-expires">No expiration</span>
+      </div>
+      <a href="#" class="contract-cancel-link" onclick="return false">Cancel</a>
     </div>`;
 
   // Backups
@@ -453,6 +470,7 @@ function selectAgent(uuid) {
   loadKeys(uuid);
   loadBackups(uuid);
   loadAgentInfo(uuid);
+  loadContract(uuid);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -565,6 +583,9 @@ function renderAgentInfo(info) {
         : `https://${domain}`
       : null;
 
+  const port = stripQuotes(info.ssh_port);
+  const sshCmd = `ssh root@${activeUUID}.agent-loft.com -p ${port}`;
+
   const rows = [
     `<div class="server-info-row">
       <span class="server-info-label">Agent Type</span>
@@ -578,9 +599,9 @@ function renderAgentInfo(info) {
           : escHtml(domain)
       }</span>
     </div>`,
-    `<div class="server-info-row">
-      <span class="server-info-label">SSH Port</span>
-      <span class="server-info-val">${escHtml(stripQuotes(info.ssh_port))}</span>
+    `<div class="server-info-row server-info-row--copy" onclick="copySSHAccess()" title="Click to copy">
+      <span class="server-info-label">SSH Access</span>
+      <span class="server-info-val server-info-copyval">${escHtml(sshCmd)}</span>
     </div>`,
     `<div class="server-info-row">
       <span class="server-info-label">Created</span>
@@ -588,6 +609,16 @@ function renderAgentInfo(info) {
     </div>`,
   ];
   body.innerHTML = rows.join("");
+}
+
+function copySSHAccess() {
+  if (!activeAgentInfo) return;
+  const port = stripQuotes(activeAgentInfo.ssh_port);
+  const cmd = `ssh root@${activeUUID}.agent-loft.com -p ${port}`;
+  navigator.clipboard
+    .writeText(cmd)
+    .then(() => toast("SSH command copied to clipboard.", "info"))
+    .catch(() => toast("Could not access clipboard.", "error"));
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -906,6 +937,105 @@ async function restoreBackup(backup) {
   } catch (err) {
     toast(err.message, "error");
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CONTRACT
+═══════════════════════════════════════════════════════════════ */
+async function loadContract(uuid) {
+  const body = document.getElementById("contract-body");
+  body.innerHTML = '<div class="loading-row"><div class="spinner"></div></div>';
+  document.getElementById("contract-status-dot").style.visibility = "hidden";
+  try {
+    const url = `${CONTRACT_URL}?uuid=${encodeURIComponent(uuid)}`;
+    dbg("\u2192 Contract", url);
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    dbg("\u2190 Contract", data);
+    renderContract(Array.isArray(data) ? data : [data]);
+  } catch (err) {
+    body.innerHTML = `<p class="inline-error" style="padding:14px 16px">${escHtml(err.message)}</p>`;
+  }
+}
+
+function renderContract(data) {
+  const body = document.getElementById("contract-body");
+  const headerDot = document.getElementById("contract-status-dot");
+
+  if (!data || !data.length) {
+    body.innerHTML =
+      '<p class="inline-error" style="padding:14px 16px">No contract data.</p>';
+    return;
+  }
+
+  const item = data[0];
+  const type = (item.type || "").trim();
+  const expires = item.expires || "";
+
+  // Determine status
+  const t = type.toLowerCase();
+  let expired = false;
+  if (expires && expires.trim()) {
+    try {
+      expired = new Date(expires) < new Date();
+    } catch (_) {}
+  }
+
+  let statusClass;
+  if (!type || expired || t.includes("none")) {
+    statusClass = "contract-dot--red";
+  } else if (t.includes("auto")) {
+    statusClass = "contract-dot--green";
+  } else {
+    statusClass = "contract-dot--yellow";
+  }
+
+  // Update the header dot
+  headerDot.className = `contract-dot ${statusClass}`;
+  headerDot.style.visibility = "visible";
+
+  // Empty type — show placeholder row with extend button on the right
+  if (!type) {
+    body.innerHTML = `
+      <div class="contract-row">
+        <div class="contract-info">
+          <span class="contract-type">No contract</span>
+          <span class="contract-expires">Stripe payments can take up to 24hrs to be recognized.</span>
+        </div>
+        <a href="${escAttr(CONTRACT_EXTEND_URL)}" target="_blank" rel="noopener" class="contract-cancel-link contract-cancel-link--danger">Extend Contract \u2192</a>
+      </div>`;
+    return;
+  }
+
+  const expLabel =
+    expires && expires.trim()
+      ? new Date(expires).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })
+      : "No expiration";
+
+  const extendHtml =
+    statusClass === "contract-dot--red"
+      ? `<a href="${escAttr(CONTRACT_EXTEND_URL)}" target="_blank" rel="noopener" class="contract-extend-link">Extend Contract \u2192</a>`
+      : "";
+
+  const cancelHtml =
+    statusClass === "contract-dot--green"
+      ? `<a href="${escAttr(CONTRACT_CANCEL_URL)}" target="_blank" rel="noopener" class="contract-cancel-link">Cancel</a>`
+      : "";
+
+  body.innerHTML = `
+    <div class="contract-row">
+      <div class="contract-info">
+        <span class="contract-type">${escHtml(type)}</span>
+        <span class="contract-expires">${escHtml(expLabel)}</span>
+        ${extendHtml}
+      </div>
+      ${cancelHtml}
+    </div>`;
 }
 
 /* ═══════════════════════════════════════════════════════════════

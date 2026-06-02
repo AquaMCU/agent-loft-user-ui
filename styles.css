@@ -665,6 +665,22 @@ body::before {
     border-top: 1px solid var(--border);
     font-size: 12px;
 }
+.server-info-row--copy {
+    cursor: pointer;
+}
+
+.server-info-row--copy:hover .server-info-copyval {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.server-info-copyval {
+    font-family: "Cascadia Code", "Fira Code", monospace;
+    font-size: 11.5px;
+    transition: color 0.15s;
+}
+
 .server-info-row:first-child {
     margin-top: 4px;
 }
@@ -1454,4 +1470,94 @@ body.auth-layout #signin-btn {
     body.auth-layout .auth-pane-title {
         display: none;
     }
+}
+
+/* ─── Contract card ──────────────────────────────────────── */
+.contract-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+}
+
+.contract-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.contract-dot--green {
+    background: var(--success);
+    box-shadow: 0 0 0 3px rgba(63, 201, 126, 0.2);
+}
+
+.contract-dot--yellow {
+    background: var(--warning);
+    box-shadow: 0 0 0 3px rgba(240, 160, 75, 0.2);
+}
+
+.contract-dot--red {
+    background: var(--danger);
+    box-shadow: 0 0 0 3px rgba(224, 82, 82, 0.2);
+}
+
+.contract-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.contract-type {
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 500;
+}
+
+.contract-expires {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.contract-extend-link {
+    display: inline-block;
+    margin-top: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--danger);
+    text-decoration: none;
+}
+
+.contract-extend-link:hover {
+    text-decoration: underline;
+}
+
+.contract-cancel-link {
+    margin-left: auto;
+    flex-shrink: 0;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-decoration: none;
+    padding: 3px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    transition:
+        color 0.15s,
+        border-color 0.15s;
+}
+
+.contract-cancel-link:hover {
+    color: var(--danger);
+    border-color: var(--danger);
+}
+
+.contract-cancel-link--danger {
+    color: var(--danger);
+    border-color: var(--danger);
+}
+
+.contract-cancel-link--danger:hover {
+    color: var(--danger);
+    border-color: var(--danger);
 }
