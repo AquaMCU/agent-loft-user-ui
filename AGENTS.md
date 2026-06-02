@@ -264,6 +264,10 @@ Response shape: `{ agent, domain, ssh_port, created, comment, … }` (n8n may wr
 
 `renderAgentInfo()` builds the Server Actions card body with rows: Agent Type, Dashboard, SSH Access (clickable — copies `ssh root@UUID.agent-loft.com -p PORT` to clipboard), Created.
 
+This same URL accepts **POST** `{ uuid, key, value }` for all config writes:
+- `key: "comment"` — saves the header comment
+- `key: "WIZZARD", value: "false"` — dismisses the Integrations wizard
+
 ### 7 · Backups
 ```
 GET   https://n8n.agent-loft.com/webhook/30eaa32f-378a-4963-9d80-533229d25766
@@ -299,12 +303,12 @@ When status is red, an **Extend Contract →** link is shown pointing to `CONTRA
 
 ### 9 · Wizard Complete
 ```
-POST  https://n8n.agent-loft.com/webhook/REPLACE_WITH_WIZARD_WEBHOOK
-Body: { uuid, email, key: "WIZZARD", value: "false" }
+POST  https://n8n.agent-loft.com/webhook/e01d06a3-14c3-4e4e-830f-7d4be9a5f529  (same as Agent Info)
+Body: { uuid, key: "WIZZARD", value: "false" }
 ```
-Called when the user clicks **Copy & Finish** in the Integrations wizard. Sets `WIZZARD=false` on the agent config so the wizard is not shown again. Update `WIZARD_COMPLETE_URL` in `app.js` with the real webhook URL.
+Called when the user clicks **Copy & Finish** in the wizard. Reuses `AGENT_INFO_URL`. The same endpoint accepts all agent config writes via `{ uuid, key, value }` — e.g. comments use `key: "comment"`. No separate constant needed.
 
-The agent info response (webhook 6) drives the wizard visibility: if the response contains `WIZZARD` with any value other than `false` (or the key is absent), the wizard is shown above the Backups card.
+The agent info GET response (webhook 6) drives wizard visibility: if the response contains `WIZZARD` with any value other than `false` (or the key is absent), the wizard is shown above the Backups card.
 
 ---
 

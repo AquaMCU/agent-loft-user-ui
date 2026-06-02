@@ -27,8 +27,7 @@ const CONTRACT_URL =
   "https://n8n.agent-loft.com/webhook/18591766-147e-4bcb-b9ac-b0f9a92e74bf";
 const CONTRACT_EXTEND_URL = "https://agent-loft.com"; // ← replace with Stripe payment link
 const CONTRACT_CANCEL_URL = "https://agent-loft.com"; // ← replace with Stripe cancellation link
-const WIZARD_COMPLETE_URL =
-  "https://n8n.agent-loft.com/webhook/REPLACE_WITH_WIZARD_WEBHOOK"; // ← update with n8n webhook that sets WIZZARD=false
+// WIZZARD=false is written via AGENT_INFO_URL (POST { uuid, key, value })
 
 /* ─── State ─────────────────────────────────────────────────── */
 let currentEmail = null;
@@ -594,7 +593,7 @@ async function saveComment() {
     const res = await fetch(AGENT_INFO_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ uuid: activeUUID, comment: text }),
+      body: JSON.stringify({ uuid: activeUUID, key: "comment", value: text }),
     });
     if (!res.ok)
       throw new Error(`Failed to save comment (HTTP ${res.status}).`);
@@ -1217,7 +1216,7 @@ function renderWizardFields() {
   document.getElementById("wizard-body").innerHTML = `
     <div class="wizard-fields" style="padding:12px 16px 4px">
       ${fields}
-      <p class="wizard-signup-hint">Need keys for this app? <a href="${escAttr(
+      <p class="wizard-signup-hint"><a href="${escAttr(
         integration.signup_url,
       )}" target="_blank" rel="noopener">${escHtml(integration.signup_label)}</a></p>
     </div>`;
@@ -1355,14 +1354,13 @@ async function wizardCopyAndFinish() {
     toast("Could not copy to clipboard — please copy manually.", "error");
     return;
   }
-  // Mark wizard complete via webhook (non-fatal if it fails)
+  // Mark wizard complete via the same agent-info endpoint (non-fatal if it fails)
   try {
-    await fetch(WIZARD_COMPLETE_URL, {
+    await fetch(AGENT_INFO_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         uuid: activeUUID,
-        email: currentEmail,
         key: "WIZZARD",
         value: "false",
       }),
