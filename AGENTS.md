@@ -77,7 +77,7 @@ Sign In
 
 Sign Up
   └── POST SIGNUP_URL {email, password, agent, location}
-        200 → show Stripe billing notice (do NOT auto-login)
+        200 → open Stripe checkout tab + auto-login immediately
         !200 → show inline error
 
 Sign Out
@@ -370,7 +370,7 @@ There is no global keys, backups, or contract state — all are re-fetched from 
 - **NEVER** use raw hex colour values — reference CSS token variables.
 - **NEVER** scroll the outer page — keep `overflow: hidden` on `body`.
 - **NEVER** call a destructive webhook (restart, restore, password update) without `confirmDialog`.
-- **NEVER** auto-login after sign-up — the user must complete Stripe billing first.
+- On successful sign-up, open the Stripe checkout tab **and** log the user in immediately via `showApp()` + `loadAgents()`.
 - **ALWAYS** use `escHtml()` when inserting user-supplied or API-returned strings into `innerHTML`.
 - **ALWAYS** use `btnLoad` / `btnReset` around async operations on buttons.
 - **ALWAYS** show an error toast (`toast(err.message, 'error')`) when a webhook call fails.

@@ -206,25 +206,42 @@ async function doSignUp() {
       stripeTab.close();
     }
 
-    // Show success — do NOT auto-login (user pays via Stripe first)
+    // Show waiting state while the instance spins up
     const successEl = document.getElementById("signup-success");
     successEl.innerHTML = `
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-           stroke="currentColor" stroke-width="2.5"
-           stroke-linecap="round" stroke-linejoin="round"
-           style="flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>
-      <span>
-        Account created! ${
-          checkoutUrl
-            ? `A <strong>Stripe</strong> checkout tab has opened.
-               If it didn\u2019t appear,
-               <a href="${escAttr(checkoutUrl)}" target="_blank" rel="noopener"
-               style="color:var(--success)">click here to complete payment</a>.`
-            : `Check your inbox \u2014 you will receive a <strong>Stripe</strong> billing link to activate your agent.`
-        }
-      </span>`;
+      <div class="spinner spinner-sm" style="flex-shrink:0"></div>
+      <span>Setting up your agent \u2014 this usually takes about a minute\u2026</span>`;
     successEl.style.display = "flex";
     btn.style.display = "none";
+
+    // Poll AGENTS_URL until the instance is ready, then auto-login
+    const deadline = Date.now() + 5 * 60 * 1000; // 5 min timeout
+    const poll = setInterval(async () => {
+      if (Date.now() > deadline) {
+        clearInterval(poll);
+        successEl.innerHTML =
+          `<span style="color:var(--danger)">Setup is taking longer than expected. ` +
+          `Try signing in manually or contact support.</span>`;
+        btn.style.display = "";
+        btnReset(btn);
+        return;
+      }
+      try {
+        const pollUrl = `${AGENTS_URL}?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`;
+        const pollRes = await fetch(pollUrl);
+        if (pollRes.ok) {
+          clearInterval(poll);
+          let pollData = [];
+          try {
+            pollData = await pollRes.json();
+          } catch (_) {}
+          currentEmail = email;
+          localStorage.setItem("al_email", email);
+          showApp();
+          processAgents(normalizeAgents(pollData));
+        }
+      } catch (_) {}
+    }, 5000);
   } catch (err) {
     if (stripeTab) stripeTab.close();
     showAuthError("signup-error", err.message);
