@@ -583,6 +583,48 @@ body::before {
     border-color: var(--accent);
 }
 
+/* ─── Instance Password card ────────────────────────────────── */
+.pw-wrap {
+    padding: 14px 16px 12px;
+}
+
+.pw-wrap .form-group {
+    margin-bottom: 0;
+}
+
+.pw-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.pw-input-wrap input {
+    padding-right: 36px;
+}
+
+.pw-save-btn {
+    position: absolute;
+    right: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: 4px;
+    color: var(--accent);
+    cursor: pointer;
+    transition:
+        color 0.15s,
+        background 0.15s;
+}
+
+.pw-save-btn:hover {
+    background: var(--bg-hover);
+}
+
 .ssh-hint {
     margin-top: 7px;
     font-size: 11px;

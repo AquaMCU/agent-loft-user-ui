@@ -444,60 +444,51 @@
                                                 d="M7 11V7a5 5 0 0 1 10 0v4"
                                             />
                                         </svg>
-                                        SSH Key
+                                        Instance Password
                                     </span>
                                 </div>
-                                <div class="ssh-wrap">
-                                    <textarea
-                                        id="ssh-input"
-                                        rows="2"
-                                        placeholder="Paste your public SSH key (ssh-rsa AAAA… or ssh-ed25519 AAAA…)"
-                                    ></textarea>
-                                    <button
-                                        id="ssh-save-btn"
-                                        class="btn btn-ghost"
-                                        onclick="saveSSHKey()"
-                                    >
-                                        Save
-                                    </button>
+                                <div class="pw-wrap">
+                                    <div class="form-group">
+                                        <label>New Password</label>
+                                        <div class="pw-input-wrap">
+                                            <input
+                                                type="password"
+                                                id="pw-new-input"
+                                                placeholder="Enter new password"
+                                                autocomplete="new-password"
+                                                oninput="
+                                                    togglePwSave(this.value)
+                                                "
+                                            />
+                                            <button
+                                                id="pw-save-btn"
+                                                class="pw-save-btn"
+                                                onclick="savePassword()"
+                                                title="Save password"
+                                                style="display: none"
+                                            >
+                                                <svg
+                                                    width="14"
+                                                    height="14"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    stroke-width="2.5"
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                >
+                                                    <polyline
+                                                        points="20 6 9 17 4 12"
+                                                    />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                                 <p class="ssh-hint">
-                                    Your current key is stored securely. Enter a
-                                    new key above to replace it.
+                                    Changing this updates root access on your
+                                    server immediately.
                                 </p>
-                                <div class="ssh-cmd-row">
-                                    <code
-                                        id="ssh-cmd-text"
-                                        class="ssh-cmd-code"
-                                    ></code>
-                                    <button
-                                        class="btn btn-ghost btn-sm ssh-copy-btn"
-                                        onclick="copySSHCommand(this)"
-                                    >
-                                        <svg
-                                            width="12"
-                                            height="12"
-                                            viewBox="0 0 24 24"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            stroke-width="2.5"
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                        >
-                                            <rect
-                                                x="9"
-                                                y="9"
-                                                width="13"
-                                                height="13"
-                                                rx="2"
-                                            />
-                                            <path
-                                                d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
-                                            />
-                                        </svg>
-                                        Copy
-                                    </button>
-                                </div>
                             </div>
 
                             <!-- Server Actions card -->

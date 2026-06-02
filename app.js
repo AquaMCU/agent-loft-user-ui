@@ -9,7 +9,7 @@ const AGENTS_URL =
   "https://n8n.agent-loft.com/webhook/73b31740-d2c7-46d7-ab71-7a3fef5f77ff";
 const KEYS_URL =
   "https://n8n.agent-loft.com/webhook/1f1a6a11-727b-4965-a59a-fde77806d27f";
-const SSH_URL =
+const PASSWORD_URL =
   "https://n8n.agent-loft.com/webhook/51098cf4-ecfd-4db4-8977-db04f01ce2b1";
 const RESTART_URL =
   "https://n8n.agent-loft.com/webhook/dac205df-66e0-4728-90e5-d784cde167af";
@@ -335,10 +335,6 @@ function populateDemoShell() {
       <button class="btn btn-primary btn-sm">Buy Credits</button>
     </div>`;
 
-  // SSH command
-  document.getElementById("ssh-cmd-text").textContent =
-    "ssh root@hermes.agent-loft.com -p 2201";
-
   // Server info
   document.getElementById("server-info-body").innerHTML = `
     <div class="server-info-row">
@@ -446,16 +442,13 @@ function selectAgent(uuid) {
   const panel = document.getElementById("agent-panel");
   panel.style.display = "flex";
 
-  // Reset SSH field
-  document.getElementById("ssh-input").value = "";
-  document.getElementById("ssh-input").placeholder =
-    "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022 (enter new key to update)";
+  // Reset password field
+  document.getElementById("pw-new-input").value = "";
+  togglePwSave("");
 
-  // Reset comment + SSH command — placeholders until loadAgentInfo resolves
+  // Reset comment
   cancelComment();
   renderComment("");
-  document.getElementById("ssh-cmd-text").textContent =
-    `ssh root@${uuid}.agent-loft.com -p …`;
 
   loadKeys(uuid);
   loadBackups(uuid);
@@ -494,11 +487,6 @@ async function loadAgentInfo(uuid) {
     activeAgentInfo = info;
     renderAgentInfo(info);
     renderComment(info.comment);
-
-    // Update SSH command with real port from ssh_port field
-    const port = stripQuotes(info.ssh_port);
-    document.getElementById("ssh-cmd-text").textContent =
-      `ssh root@${uuid}.agent-loft.com -p ${port}`;
   } catch (err) {
     body.innerHTML = `<p class="inline-error">${escHtml(err.message)}</p>`;
   }
@@ -691,67 +679,58 @@ function renderKeys(keys) {
     .join("");
 }
 
-function copySSHCommand(btn) {
-  const cmd = document.getElementById("ssh-cmd-text").textContent;
-  if (!cmd) return;
-  navigator.clipboard
-    .writeText(cmd)
-    .then(() => {
-      const orig = btn.innerHTML;
-      btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" stroke-width="2.5"
-        stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="20 6 9 17 4 12"/>
-      </svg> Copied!`;
-      setTimeout(() => {
-        btn.innerHTML = orig;
-      }, 1800);
-    })
-    .catch(() => toast("Could not access clipboard.", "error"));
-}
-
 function buyCredits(keyName) {
   toast(`Opening Agent Loft to purchase credits\u2026`, "info");
   window.open("https://agent-loft.com", "_blank");
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   SSH KEY
+   INSTANCE PASSWORD
 ═══════════════════════════════════════════════════════════════ */
-async function saveSSHKey() {
-  const key = document.getElementById("ssh-input").value.trim();
-  if (!key) {
-    toast("Please paste your SSH public key first.", "warning");
+function togglePwSave(value) {
+  document.getElementById("pw-save-btn").style.display = value
+    ? "flex"
+    : "none";
+}
+
+async function savePassword() {
+  const newPw = document.getElementById("pw-new-input").value;
+
+  if (!newPw) {
+    toast("Please enter a new password.", "warning");
+    return;
+  }
+  if (newPw.length < 8) {
+    toast("Password must be at least 8 characters.", "warning");
     return;
   }
 
   const ok = await confirmDialog(
-    "Update SSH Key",
-    "This will replace the SSH key on your server. You will need the matching private key to connect after this change. Continue?",
+    "Update Instance Password",
+    "This will immediately update the root password on your server. Make sure to save it somewhere safe. Continue?",
   );
   if (!ok) return;
 
-  const btn = document.getElementById("ssh-save-btn");
+  const btn = document.getElementById("pw-save-btn");
   btnLoad(btn, "Saving\u2026");
 
   try {
-    dbg("→ Update SSH Key", KEYS_URL);
-    const res = await fetch(KEYS_URL, {
+    dbg("\u2192 Update Password", PASSWORD_URL);
+    const res = await fetch(PASSWORD_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         uuid: activeUUID,
         email: currentEmail,
-        ssh_key: key,
+        password: newPw,
       }),
     });
     if (!res.ok)
-      throw new Error(`Failed to save SSH key (HTTP ${res.status}).`);
+      throw new Error(`Failed to update password (HTTP ${res.status}).`);
 
-    toast("SSH key updated successfully.", "success");
-    document.getElementById("ssh-input").value = "";
-    document.getElementById("ssh-input").placeholder =
-      "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022 (updated \u2713)";
+    toast("Password updated successfully.", "success");
+    document.getElementById("pw-new-input").value = "";
+    togglePwSave("");
   } catch (err) {
     toast(err.message, "error");
   } finally {
