@@ -467,6 +467,7 @@ body::before {
     flex-direction: column;
     gap: 14px;
     min-width: 0;
+    position: relative;
 }
 
 /* ─── Cards ─────────────────────────────────────────────────── */
@@ -1564,6 +1565,25 @@ body.auth-layout #signin-btn {
 }
 
 /* ─── Wizard (Integrations setup) ─────────────────────────────── */
+#wizard-card {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    margin: 0;
+}
+
+#wizard-body {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
 .wizard-step-label {
     font-size: 11px;
     font-weight: 500;

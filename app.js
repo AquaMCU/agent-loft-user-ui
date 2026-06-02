@@ -1095,8 +1095,10 @@ function renderContract(data) {
    WIZARD (Integrations setup)
 ═══════════════════════════════════════════════════════════════ */
 function loadWizard(info) {
+  // API returns lowercase key — check both casings defensively
+  const rawVal = info.wizzard ?? info.WIZZARD;
   const disabled =
-    info.WIZZARD === false || String(info.WIZZARD).toLowerCase() === "false";
+    rawVal === false || String(rawVal ?? "").toLowerCase() === "false";
   if (disabled) {
     hide("wizard-card");
     return;
@@ -1108,7 +1110,7 @@ function loadWizard(info) {
   wizardFieldValues = {};
   wizardIntegrationStep = 0;
   wizardSelectedIntegrationList = [];
-  document.getElementById("wizard-card").style.display = "block";
+  show("wizard-card");
   renderWizardStep();
 }
 
