@@ -409,30 +409,22 @@
                                         </svg>
                                         Agent Actions
                                     </span>
-                                    <button
-                                        id="restart-btn"
-                                        class="btn btn-danger"
-                                        onclick="doRestart()"
-                                    >
-                                        <svg
-                                            width="13"
-                                            height="13"
-                                            viewBox="0 0 24 24"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            stroke-width="2.5"
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
+                                    <div style="display: flex; gap: 8px">
+                                        <button
+                                            id="restart-btn"
+                                            class="btn btn-ghost btn-sm"
+                                            onclick="doRestart()"
                                         >
-                                            <path d="M23 4v6h-6" />
-                                            <path d="M1 20v-6h6" />
-                                            <path
-                                                d="M3.51 9a9 9 0 0 1 14.36-3.36L23 10
-                                             M1 14l5.13 4.36A9 9 0 0 0 20.49 15"
-                                            />
-                                        </svg>
-                                        Restart Agent
-                                    </button>
+                                            Restart Agent
+                                        </button>
+                                        <button
+                                            id="open-agent-btn"
+                                            class="btn btn-primary btn-sm"
+                                            onclick="openAgent()"
+                                        >
+                                            Open Agent
+                                        </button>
+                                    </div>
                                 </div>
                                 <div id="server-info-body">
                                     <div class="loading-row">

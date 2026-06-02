@@ -144,11 +144,17 @@ Card backgrounds are `--bg-inner` (one level darker than the shell's `--bg-card`
 
 | Class | Colour | Use for |
 |---|---|---|
-| `btn btn-primary` | `--accent` blue | primary CTA (Buy Credits) |
-| `btn btn-danger` | `--danger` red | destructive (Restart, Confirm) |
-| `btn btn-ghost` | `--bg-hover` + border | secondary actions (Make Backup) |
-| `btn btn-sm` | — modifier, smaller padding | actions inside card headers |
-| `btn btn-block` | — modifier, full width | auth form submit |
+| `btn btn-primary btn-sm` | `--accent` blue | navigation / open actions (Open Agent) |
+| `btn btn-ghost btn-sm` | `--bg-hover` grey + border | all card-header and inline actions (Restart Agent, Buy Credits, Restore, Extend Contract, Cancel, Make Backup) |
+| `btn btn-danger` | `--danger` red | confirm dialog destructive confirm only |
+| `btn btn-block` | — modifier, full width | auth form submit buttons |
+
+**Card-header action buttons must:**
+- Use `btn btn-ghost btn-sm` (grey) by default, or `btn btn-primary btn-sm` (blue) for a primary navigation action.
+- Have **no SVG icons** — text label only.
+- When two buttons appear side-by-side in a header, wrap them in `<div style="display:flex;gap:8px;">` rather than placing them as siblings.
+
+**`<a>` tags used as buttons** (e.g. contract links that open Stripe): apply the same `btn btn-ghost btn-sm` classes. The `.btn` base class sets `text-decoration: none` so no underline appears.
 
 #### Inline icon-only buttons
 Use the `.pw-save-btn` pattern for buttons embedded inside input fields: `position: absolute`, no text, icon only, hidden by default, shown/hidden via JS.

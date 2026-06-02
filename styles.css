@@ -774,6 +774,7 @@ body::before {
     font-size: 13px;
     font-weight: 500;
     white-space: nowrap;
+    text-decoration: none;
     transition:
         opacity 0.15s,
         background 0.15s,

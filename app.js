@@ -355,7 +355,7 @@ function populateDemoShell() {
         </div>
 
       </div>
-      <button class="btn btn-primary btn-sm">Buy Credits</button>
+      <button class="btn btn-ghost btn-sm">Buy Credits</button>
     </div>`;
 
   // Server info
@@ -387,7 +387,7 @@ function populateDemoShell() {
         <span class="contract-type">Auto - Monthly</span>
         <span class="contract-expires">No expiration</span>
       </div>
-      <a href="#" class="contract-cancel-link" onclick="return false">Cancel</a>
+      <a href="#" class="btn btn-ghost btn-sm" style="margin-left:auto;flex-shrink:0;" onclick="return false">Cancel</a>
     </div>`;
 
   // Backups
@@ -640,6 +640,20 @@ function copySSHAccess() {
     .catch(() => toast("Could not access clipboard.", "error"));
 }
 
+function openAgent() {
+  if (!activeAgentInfo) {
+    toast("Agent info not loaded yet.", "warning");
+    return;
+  }
+  const domain = stripQuotes(activeAgentInfo.domain);
+  if (!domain || domain === "\u2014") {
+    toast("No dashboard URL available for this agent.", "warning");
+    return;
+  }
+  const href = domain.startsWith("http") ? domain : `https://${domain}`;
+  window.open(href, "_blank", "noopener");
+}
+
 /* ═══════════════════════════════════════════════════════════════
    KEYS
 ═══════════════════════════════════════════════════════════════ */
@@ -724,7 +738,7 @@ function renderKeys(keys) {
                 </div>
 
             </div>
-            <button class="btn btn-primary btn-sm"
+            <button class="btn btn-ghost btn-sm"
                     style="align-self:center"
                     onclick="buyCredits('${escAttr(k.name)}')">
                 Buy Credits
@@ -1027,7 +1041,7 @@ function renderContract(data) {
           <span class="contract-type">No contract</span>
           <span class="contract-expires">Stripe payments can take up to 24hrs to be recognized.</span>
         </div>
-        <a href="${escAttr(CONTRACT_EXTEND_URL)}" target="_blank" rel="noopener" class="contract-cancel-link contract-cancel-link--danger">Extend Contract \u2192</a>
+        <a href="${escAttr(CONTRACT_EXTEND_URL)}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" style="margin-left:auto;flex-shrink:0;">Extend Contract</a>
       </div>`;
     return;
   }
@@ -1043,12 +1057,12 @@ function renderContract(data) {
 
   const extendHtml =
     statusClass === "contract-dot--red"
-      ? `<a href="${escAttr(CONTRACT_EXTEND_URL)}" target="_blank" rel="noopener" class="contract-extend-link">Extend Contract \u2192</a>`
+      ? `<a href="${escAttr(CONTRACT_EXTEND_URL)}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" style="margin-top:8px;display:inline-flex;">Extend Contract</a>`
       : "";
 
   const cancelHtml =
     statusClass === "contract-dot--green"
-      ? `<a href="${escAttr(CONTRACT_CANCEL_URL)}" target="_blank" rel="noopener" class="contract-cancel-link">Cancel</a>`
+      ? `<a href="${escAttr(CONTRACT_CANCEL_URL)}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" style="margin-left:auto;flex-shrink:0;">Cancel</a>`
       : "";
 
   body.innerHTML = `
