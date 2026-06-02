@@ -330,14 +330,13 @@ function populateDemoShell() {
           <span style="font-size:10px;font-weight:500;padding:1px 7px;border-radius:10px;
             background:#0e2e1c;color:var(--success);margin-left:6px;vertical-align:middle;">Active</span>
         </div>
-        <code class="key-label">sk-or-v1-demo-xxxxxxxxxxxxxxxxxxxx</code>
         <div class="key-stats">
           <span><span class="key-stat-val">350</span>
           <span class="text-muted"> / 500 credits remaining</span></span>
           <span class="sep-dot">&middot;</span>
           <span class="text-muted">Expires Dec 31, 2026</span>
         </div>
-        <div class="prog-wrap"><div class="prog-bar prog-low" style="width:30%"></div></div>
+
       </div>
       <button class="btn btn-primary btn-sm">Buy Credits</button>
     </div>`;
@@ -698,7 +697,6 @@ function renderKeys(keys) {
                         ${statusLabel}
                     </span>
                 </div>
-                <code class="key-label">${escHtml(k.label)}</code>
                 <div class="key-stats">
                     <span>
                         <span class="key-stat-val">${k.limit_remaining ?? "\u2014"}</span>
@@ -707,9 +705,7 @@ function renderKeys(keys) {
                     <span class="sep-dot">&middot;</span>
                     <span class="text-muted">Expires ${exp}</span>
                 </div>
-                <div class="prog-wrap">
-                    <div class="prog-bar ${progClass}" style="width:${pct}%"></div>
-                </div>
+
             </div>
             <button class="btn btn-primary btn-sm"
                     style="align-self:center"
@@ -785,8 +781,8 @@ async function savePassword() {
 ═══════════════════════════════════════════════════════════════ */
 async function doRestart() {
   const ok = await confirmDialog(
-    "Restart Server",
-    "Your agent will be unavailable for a few minutes while the server restarts. This will interrupt any active sessions. Continue?",
+    "Restart Agent",
+    "Your agent will be unavailable for a few minutes while it restarts. This will interrupt any active sessions. Continue?",
   );
   if (!ok) return;
 
@@ -794,7 +790,7 @@ async function doRestart() {
   btnLoad(btn, "Restarting\u2026");
 
   try {
-    dbg("→ Restart Server", RESTART_URL);
+    dbg("→ Restart Agent", RESTART_URL);
     const res = await fetch(RESTART_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -821,7 +817,7 @@ async function doRestart() {
             <path d="M23 4v6h-6"/>
             <path d="M1 20v-6h6"/>
             <path d="M3.51 9a9 9 0 0 1 14.36-3.36L23 10M1 14l5.13 4.36A9 9 0 0 0 20.49 15"/>
-        </svg> Restart Server`;
+        </svg> Restart Agent`;
   }
 }
 
