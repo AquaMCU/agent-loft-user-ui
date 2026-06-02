@@ -320,6 +320,9 @@ function populateDemoShell() {
   document.getElementById("agent-panel").style.display = "flex";
 
   // API Keys
+  const keysDot = document.getElementById("keys-status-dot");
+  keysDot.className = "contract-dot contract-dot--green";
+  keysDot.style.visibility = "visible";
   document.getElementById("keys-body").innerHTML = `
     <div class="key-row">
       <div class="key-info">
@@ -627,6 +630,7 @@ function copySSHAccess() {
 async function loadKeys(uuid) {
   const body = document.getElementById("keys-body");
   body.innerHTML = '<div class="loading-row"><div class="spinner"></div></div>';
+  document.getElementById("keys-status-dot").style.visibility = "hidden";
 
   try {
     const _keysUrl = `${KEYS_URL}?uuid=${encodeURIComponent(uuid)}`;
@@ -651,12 +655,19 @@ async function loadKeys(uuid) {
 
 function renderKeys(keys) {
   const body = document.getElementById("keys-body");
+  const dot = document.getElementById("keys-status-dot");
 
   if (!keys.length) {
+    dot.className = "contract-dot contract-dot--red";
+    dot.style.visibility = "visible";
     body.innerHTML =
       '<p class="text-muted" style="font-size:13px; padding: 4px 0;">No API keys found.</p>';
     return;
   }
+
+  const hasActive = keys.some((k) => !k.disabled);
+  dot.className = `contract-dot ${hasActive ? "contract-dot--green" : "contract-dot--red"}`;
+  dot.style.visibility = "visible";
 
   body.innerHTML = keys
     .map((k) => {
