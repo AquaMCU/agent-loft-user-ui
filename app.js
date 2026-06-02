@@ -272,22 +272,30 @@ function showAuth() {
 function showApp() {
   const authCard = document.getElementById("auth-card");
   const shell = document.getElementById("app-shell");
+  const fromAuth = document.body.classList.contains("auth-layout");
 
-  // 1. Slide auth card upward + blur out
-  authCard.classList.add("auth-leaving");
-
-  setTimeout(() => {
+  function reveal() {
     authCard.style.display = "none";
     authCard.classList.remove("auth-leaving");
     document.body.classList.remove("auth-layout");
 
-    // 2. Wake up the shell (remove demo dimming, play entry animation)
+    // Make shell visible and play entry animation
+    shell.style.display = "flex";
     shell.classList.remove("demo-mode");
     shell.classList.add("app-entering");
     document.getElementById("user-email-label").textContent = currentEmail;
 
     setTimeout(() => shell.classList.remove("app-entering"), 620);
-  }, 310);
+  }
+
+  if (fromAuth) {
+    // Transitioning from the auth screen: animate auth card out first
+    authCard.classList.add("auth-leaving");
+    setTimeout(reveal, 310);
+  } else {
+    // Direct page load while already logged in: skip the auth animation
+    reveal();
+  }
 }
 
 function populateDemoShell() {
