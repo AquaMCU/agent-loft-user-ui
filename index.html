@@ -411,17 +411,18 @@
                                     </span>
                                     <div style="display: flex; gap: 8px">
                                         <button
+                                            id="wizard-toggle-btn"
+                                            class="btn btn-ghost btn-sm"
+                                            onclick="openWizard()"
+                                        >
+                                            Integrations
+                                        </button>
+                                        <button
                                             id="restart-btn"
                                             class="btn btn-ghost btn-sm"
                                             onclick="doRestart()"
                                         >
                                             Restart Agent
-                                        </button>
-                                        <button
-                                            class="btn btn-ghost btn-sm"
-                                            onclick="openWizard()"
-                                        >
-                                            Integrations
                                         </button>
                                         <button
                                             id="open-agent-btn"
@@ -566,12 +567,10 @@
                                                 points="2 12 12 17 22 12"
                                             />
                                         </svg>
-                                        Integrations
+                                        <span id="wizard-card-title"
+                                            >Select Skills</span
+                                        >
                                     </span>
-                                    <span
-                                        class="wizard-step-label"
-                                        id="wizard-step-label"
-                                    ></span>
                                 </div>
                                 <div id="wizard-body"></div>
                                 <div class="wizard-footer">

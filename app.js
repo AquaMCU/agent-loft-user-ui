@@ -670,6 +670,15 @@ function openAgent() {
 }
 
 function openWizard() {
+  const card = document.getElementById("wizard-card");
+  const btn = document.getElementById("wizard-toggle-btn");
+  if (card.style.display !== "none") {
+    // Wizard is visible — close it, restore button label
+    hide("wizard-card");
+    if (btn) btn.textContent = "Integrations";
+    return;
+  }
+  // Wizard is hidden — open from step 1, update button label
   wizardPhase = "skills";
   wizardSelectedSkills = new Set();
   wizardSelectedIntegrations = new Set();
@@ -677,6 +686,7 @@ function openWizard() {
   wizardIntegrationStep = 0;
   wizardSelectedIntegrationList = [];
   show("wizard-card");
+  if (btn) btn.textContent = "Backup";
   renderWizardStep();
 }
 
@@ -1271,7 +1281,7 @@ function buildWizardPrompt() {
 function updateWizardNav() {
   const backBtn = document.getElementById("wizard-back-btn");
   const nextBtn = document.getElementById("wizard-next-btn");
-  const stepLabel = document.getElementById("wizard-step-label");
+  const cardTitle = document.getElementById("wizard-card-title");
 
   let label = "";
   if (wizardPhase === "skills") label = "Select Skills";
@@ -1280,7 +1290,7 @@ function updateWizardNav() {
     const int = wizardSelectedIntegrationList[wizardIntegrationStep];
     label = int ? int.name : "";
   } else if (wizardPhase === "review") label = "Review Init Prompt";
-  if (stepLabel) stepLabel.textContent = label;
+  if (cardTitle) cardTitle.textContent = label;
 
   if (backBtn) backBtn.style.display = wizardPhase === "skills" ? "none" : "";
   if (nextBtn)
@@ -1360,14 +1370,17 @@ function wizardBack() {
 async function wizardCopyAndFinish() {
   const textarea = document.getElementById("wizard-prompt-textarea");
   if (!textarea) return;
+
+  let copied = false;
   try {
     await navigator.clipboard.writeText(textarea.value);
-    toast("Init prompt copied to clipboard.", "success");
+    copied = true;
   } catch (_) {
     toast("Could not copy to clipboard — please copy manually.", "error");
     return;
   }
-  // Mark wizard complete via the same agent-info endpoint (non-fatal if it fails)
+
+  // Mark wizard complete via the agent-info endpoint (non-fatal)
   try {
     await fetch(AGENT_INFO_URL, {
       method: "POST",
@@ -1381,7 +1394,47 @@ async function wizardCopyAndFinish() {
   } catch (_) {
     /* non-fatal */
   }
+
+  // Show success screen inside the wizard instead of closing immediately
+  const cardTitle = document.getElementById("wizard-card-title");
+  if (cardTitle) cardTitle.textContent = "Prompt Copied";
+
+  document.getElementById("wizard-body").innerHTML = `
+    <div style="padding:24px 20px 8px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none"
+           stroke="var(--success)" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+        <polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+      <p style="font-size:14px;font-weight:600;color:var(--text);margin:0">
+        Your init prompt is in the clipboard.
+      </p>
+      <p style="font-size:13px;color:var(--text-muted);margin:0;max-width:300px;line-height:1.6">
+        Open your agent’s console and paste the prompt
+        (<strong style="color:var(--text)">Ctrl&nbsp;+&nbsp;V</strong> or
+        <strong style="color:var(--text)">Cmd&nbsp;+&nbsp;V</strong>)
+        to apply the configuration.
+      </p>
+    </div>`;
+
+  const backBtn = document.getElementById("wizard-back-btn");
+  const nextBtn = document.getElementById("wizard-next-btn");
+  if (backBtn) backBtn.style.display = "none";
+  if (nextBtn) {
+    nextBtn.textContent = "Done";
+    nextBtn.onclick = () => {
+      hide("wizard-card");
+      const tb = document.getElementById("wizard-toggle-btn");
+      if (tb) tb.textContent = "Integrations";
+    };
+  }
+}
+
+function wizardDone() {
   hide("wizard-card");
+  const tb = document.getElementById("wizard-toggle-btn");
+  if (tb) tb.textContent = "Integrations";
 }
 
 /* ═══════════════════════════════════════════════════════════════
