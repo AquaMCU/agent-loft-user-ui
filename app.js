@@ -669,6 +669,17 @@ function openAgent() {
   window.open(href, "_blank", "noopener");
 }
 
+function openWizard() {
+  wizardPhase = "skills";
+  wizardSelectedSkills = new Set();
+  wizardSelectedIntegrations = new Set();
+  wizardFieldValues = {};
+  wizardIntegrationStep = 0;
+  wizardSelectedIntegrationList = [];
+  show("wizard-card");
+  renderWizardStep();
+}
+
 /* ═══════════════════════════════════════════════════════════════
    KEYS
 ═══════════════════════════════════════════════════════════════ */
