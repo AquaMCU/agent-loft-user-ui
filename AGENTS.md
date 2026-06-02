@@ -297,6 +297,15 @@ Response shape:
 
 When status is red, an **Extend Contract →** link is shown pointing to `CONTRACT_EXTEND_URL` (defined at the top of `app.js` — **update this to the Stripe payment link**).
 
+### 9 · Wizard Complete
+```
+POST  https://n8n.agent-loft.com/webhook/REPLACE_WITH_WIZARD_WEBHOOK
+Body: { uuid, email, key: "WIZZARD", value: "false" }
+```
+Called when the user clicks **Copy & Finish** in the Integrations wizard. Sets `WIZZARD=false` on the agent config so the wizard is not shown again. Update `WIZARD_COMPLETE_URL` in `app.js` with the real webhook URL.
+
+The agent info response (webhook 6) drives the wizard visibility: if the response contains `WIZZARD` with any value other than `false` (or the key is absent), the wizard is shown above the Backups card.
+
 ---
 
 ## State Variables (`app.js`)
@@ -307,8 +316,16 @@ When status is red, an **Extend Contract →** link is shown pointing to `CONTRA
 | `agents` | `Array` | full agent objects from AGENTS_URL |
 | `activeUUID` | `string \| null` | UUID of the currently selected agent tab |
 | `activeAgentInfo` | `object \| null` | last loaded agent info response (used by `copySSHAccess`) |
+| `wizardPhase` | `string \| null` | current wizard phase: `'skills'` \| `'integrations'` \| `'fields'` \| `'review'` \| `null` |
+| `wizardSkillsData` | `Array \| null` | cached contents of `skills.json` (loaded once, reused) |
+| `wizardIntegrationsData` | `Array \| null` | cached contents of `integrations.json` (loaded once, reused) |
+| `wizardSelectedSkills` | `Set<number>` | indices of selected skills |
+| `wizardSelectedIntegrations` | `Set<number>` | indices of selected integrations |
+| `wizardFieldValues` | `object` | `{ stepIndex: { fieldKey: value } }` — values entered per integration |
+| `wizardIntegrationStep` | `number` | current integration index during the `'fields'` phase |
+| `wizardSelectedIntegrationList` | `Array` | ordered integration objects chosen in step 2 |
 
-There is no global keys, backups, or contract state — all are re-fetched from the network every time a tab is selected (`selectAgent()`).
+There is no global keys, backups, contract, or wizard-JSON state that is re-fetched per tab switch — agent selections and field values reset per-agent, but `skills.json` / `integrations.json` are cached for the session.
 
 ---
 
@@ -336,6 +353,19 @@ There is no global keys, backups, or contract state — all are re-fetched from 
 | `restoreBackup(backup)` | confirm → POST backup restore |
 | `loadContract(uuid)` | fetch + render contract card |
 | `renderContract(data)` | determine status dot colour + show type, expiry, extend link if red |
+| `openAgent()` | open the agent's dashboard URL (from `activeAgentInfo.domain`) in a new tab |
+| `loadWizard(info)` | check `info.WIZZARD`; if not `false`, reset wizard state and show the card |
+| `renderWizardStep()` | async — fetch JSON if needed, render the current phase into `#wizard-body`, call `updateWizardNav()` |
+| `renderWizardSkills()` | render skills checklist (step 1) with search |
+| `renderWizardIntegrations()` | render integrations checklist (step 2) with search |
+| `renderWizardFields()` | render form fields for `wizardSelectedIntegrationList[wizardIntegrationStep]` |
+| `renderWizardReview()` | build combined init-prompt textarea from skills + integrations |
+| `buildWizardPrompt()` | assemble skills prompts + integration prompts (with field substitution) into one string |
+| `updateWizardNav()` | set step-label text + show/hide Back button + set Next/Copy label |
+| `wizardNext()` | advance phase or trigger `wizardCopyAndFinish()` |
+| `wizardBack()` | retreat phase |
+| `wizardFilter(input, listId)` | real-time search filter on `.wizard-list-item` elements |
+| `wizardCopyAndFinish()` | copy prompt to clipboard → POST wizard webhook → hide card |
 | `confirmDialog(title, msg)` | shows modal, returns `Promise<boolean>` |
 | `toast(msg, type)` | bottom-right notification, auto-removes after 4 s |
 | `btnLoad(btn, label)` | disable button, show spinner + label, save original HTML |
@@ -346,13 +376,24 @@ There is no global keys, backups, or contract state — all are re-fetched from 
 
 ---
 
+## Wizard Data Files
+
+| File | Shape | Purpose |
+|---|---|---|
+| `skills.json` | `[{ name, prompt }]` | Skills the agent can have. `prompt` is appended verbatim to the init prompt when selected. |
+| `integrations.json` | `[{ name, fields[], signup_url, signup_label, prompt }]` | Third-party integrations. `fields` = `[{ label, key, type, placeholder }]`. `prompt` uses `{key}` placeholders replaced with user input. |
+
+Both files are fetched lazily on first access and cached in `wizardSkillsData` / `wizardIntegrationsData` for the session. They are plain JSON — no build step required.
+
+---
+
 ## How to Add a New Feature
 
 1. **New card** — add a `.card` inside the appropriate `.content-col` in `index.html`. Give the dynamic content container a unique `id`.
 2. **New webhook call** — declare the URL as a `const` at the top of `app.js`. Use `btnLoad` / `btnReset` for the trigger button and wrap the call in `try/catch` with `toast(err.message, 'error')` in the catch.
 3. **Destructive action** — always gate with `await confirmDialog(...)` before the fetch.
 4. **New CSS component** — add it to `styles.css` in the appropriate section (marked with `/* ─── Section ─ */` comments). Use only existing token variables.
-5. **New agent-tab action** — call it from `selectAgent()` so it reloads when the user switches agents.
+5. **New agent-tab action** — call it from `selectAgent()` so it reloads when the user switches agents. Note: `loadWizard(info)` is called from inside `loadAgentInfo()` (which is called by `selectAgent()`), not directly from `selectAgent()` — this is acceptable when the loader depends on async data fetched by another loader.
 6. **Demo shell** — update `populateDemoShell()` to populate the new card's `id` with representative static data so the auth screen preview stays consistent.
 
 ---

@@ -1,0 +1,276 @@
+[
+  {
+    "name": "OpenRouter",
+    "fields": [
+      {
+        "label": "API Key",
+        "key": "api_key",
+        "type": "password",
+        "placeholder": "sk-or-v1-..."
+      }
+    ],
+    "signup_url": "https://openrouter.ai/keys",
+    "signup_label": "Need a key for OpenRouter? Sign up here",
+    "prompt": "Route LLM requests using key {api_key}."
+  },
+  {
+    "name": "Slack",
+    "fields": [
+      {
+        "label": "Bot Token",
+        "key": "bot_token",
+        "type": "password",
+        "placeholder": "xoxb-..."
+      },
+      {
+        "label": "Default Channel ID",
+        "key": "channel_id",
+        "type": "text",
+        "placeholder": "C0123ABC456"
+      }
+    ],
+    "signup_url": "https://api.slack.com/apps",
+    "signup_label": "Need a Slack bot token? Create an app here",
+    "prompt": "Send/read Slack messages using {bot_token}, default channel {channel_id}."
+  },
+  {
+    "name": "GitHub",
+    "fields": [
+      {
+        "label": "Personal Access Token",
+        "key": "token",
+        "type": "password",
+        "placeholder": "ghp_..."
+      },
+      {
+        "label": "Default Repository",
+        "key": "repo",
+        "type": "text",
+        "placeholder": "owner/repo"
+      }
+    ],
+    "signup_url": "https://github.com/settings/tokens",
+    "signup_label": "Need a GitHub token? Generate one here",
+    "prompt": "Access GitHub with token {token}, default repo {repo}."
+  },
+  {
+    "name": "Notion",
+    "fields": [
+      {
+        "label": "Integration Token",
+        "key": "token",
+        "type": "password",
+        "placeholder": "secret_..."
+      },
+      {
+        "label": "Default Database ID",
+        "key": "database_id",
+        "type": "text",
+        "placeholder": "32-char hex"
+      }
+    ],
+    "signup_url": "https://notion.so/my-integrations",
+    "signup_label": "Need a Notion integration token? Create one here",
+    "prompt": "Read/write Notion pages with token {token}, default database {database_id}."
+  },
+  {
+    "name": "Google Sheets",
+    "fields": [
+      {
+        "label": "Service Account JSON (base64)",
+        "key": "credentials",
+        "type": "text",
+        "placeholder": "eyJ0eXBlIjoic2VydmljZV9hY2NvdW50..."
+      },
+      {
+        "label": "Spreadsheet ID",
+        "key": "sheet_id",
+        "type": "text",
+        "placeholder": "1BxiMVs0XRA5..."
+      }
+    ],
+    "signup_url": "https://console.cloud.google.com/apis/credentials",
+    "signup_label": "Need Google service account credentials? Create them here",
+    "prompt": "Access spreadsheet {sheet_id} with credentials {credentials}."
+  },
+  {
+    "name": "Telegram",
+    "fields": [
+      {
+        "label": "Bot Token",
+        "key": "bot_token",
+        "type": "password",
+        "placeholder": "123456:ABC-DEF..."
+      },
+      {
+        "label": "Chat ID",
+        "key": "chat_id",
+        "type": "text",
+        "placeholder": "-100..."
+      }
+    ],
+    "signup_url": "https://t.me/BotFather",
+    "signup_label": "Need a Telegram bot token? Get one from BotFather",
+    "prompt": "Send/receive Telegram messages with token {bot_token}, default chat {chat_id}."
+  },
+  {
+    "name": "Discord",
+    "fields": [
+      {
+        "label": "Bot Token",
+        "key": "bot_token",
+        "type": "password",
+        "placeholder": "MTI..."
+      },
+      {
+        "label": "Default Channel ID",
+        "key": "channel_id",
+        "type": "text",
+        "placeholder": "1234567890"
+      }
+    ],
+    "signup_url": "https://discord.com/developers/applications",
+    "signup_label": "Need a Discord bot token? Create an application here",
+    "prompt": "Post/read Discord messages with token {bot_token}, channel {channel_id}."
+  },
+  {
+    "name": "Airtable",
+    "fields": [
+      {
+        "label": "API Key",
+        "key": "api_key",
+        "type": "password",
+        "placeholder": "pat..."
+      },
+      {
+        "label": "Base ID",
+        "key": "base_id",
+        "type": "text",
+        "placeholder": "appXXXXXXXXXXXXXX"
+      }
+    ],
+    "signup_url": "https://airtable.com/create/tokens",
+    "signup_label": "Need an Airtable API key? Create a token here",
+    "prompt": "Read/write Airtable base {base_id} using key {api_key}."
+  },
+  {
+    "name": "Gmail",
+    "fields": [
+      {
+        "label": "OAuth Client ID",
+        "key": "client_id",
+        "type": "text",
+        "placeholder": "....apps.googleusercontent.com"
+      },
+      {
+        "label": "OAuth Client Secret",
+        "key": "client_secret",
+        "type": "password",
+        "placeholder": "GOCSPX-..."
+      },
+      {
+        "label": "Refresh Token",
+        "key": "refresh_token",
+        "type": "password",
+        "placeholder": "1//..."
+      }
+    ],
+    "signup_url": "https://console.cloud.google.com/apis/credentials",
+    "signup_label": "Need Gmail OAuth credentials? Create them here",
+    "prompt": "Access Gmail using client {client_id}, secret {client_secret}, refresh token {refresh_token}."
+  },
+  {
+    "name": "Stripe",
+    "fields": [
+      {
+        "label": "Secret Key",
+        "key": "secret_key",
+        "type": "password",
+        "placeholder": "sk_live_..."
+      }
+    ],
+    "signup_url": "https://dashboard.stripe.com/apikeys",
+    "signup_label": "Need a Stripe secret key? Find it here",
+    "prompt": "Process Stripe payments using key {secret_key}."
+  },
+  {
+    "name": "Twilio",
+    "fields": [
+      {
+        "label": "Account SID",
+        "key": "account_sid",
+        "type": "text",
+        "placeholder": "AC..."
+      },
+      {
+        "label": "Auth Token",
+        "key": "auth_token",
+        "type": "password",
+        "placeholder": "your Twilio auth token"
+      },
+      {
+        "label": "From Phone Number",
+        "key": "from_number",
+        "type": "text",
+        "placeholder": "+1..."
+      }
+    ],
+    "signup_url": "https://twilio.com/try-twilio",
+    "signup_label": "Need Twilio credentials? Sign up here",
+    "prompt": "Send SMS via Twilio from {from_number} using SID {account_sid} and token {auth_token}."
+  },
+  {
+    "name": "Supabase",
+    "fields": [
+      {
+        "label": "Project URL",
+        "key": "url",
+        "type": "text",
+        "placeholder": "https://xxx.supabase.co"
+      },
+      {
+        "label": "Service Role Key",
+        "key": "service_key",
+        "type": "password",
+        "placeholder": "eyJ..."
+      }
+    ],
+    "signup_url": "https://supabase.com/dashboard",
+    "signup_label": "Need a Supabase project? Create one here",
+    "prompt": "Query/write Supabase at {url} using key {service_key}."
+  },
+  {
+    "name": "Pinecone",
+    "fields": [
+      {
+        "label": "API Key",
+        "key": "api_key",
+        "type": "password",
+        "placeholder": "your Pinecone API key"
+      },
+      {
+        "label": "Index Name",
+        "key": "index_name",
+        "type": "text",
+        "placeholder": "my-index"
+      }
+    ],
+    "signup_url": "https://pinecone.io",
+    "signup_label": "Need a Pinecone API key? Sign up here",
+    "prompt": "Store/query vectors in index {index_name} using key {api_key}."
+  },
+  {
+    "name": "OpenAI",
+    "fields": [
+      {
+        "label": "API Key",
+        "key": "api_key",
+        "type": "password",
+        "placeholder": "sk-proj-..."
+      }
+    ],
+    "signup_url": "https://platform.openai.com/api-keys",
+    "signup_label": "Need an OpenAI API key? Get one here",
+    "prompt": "Use OpenAI API with key {api_key} for GPT models and embeddings."
+  }
+]

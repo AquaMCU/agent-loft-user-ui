@@ -27,6 +27,8 @@ const CONTRACT_URL =
   "https://n8n.agent-loft.com/webhook/18591766-147e-4bcb-b9ac-b0f9a92e74bf";
 const CONTRACT_EXTEND_URL = "https://agent-loft.com"; // ← replace with Stripe payment link
 const CONTRACT_CANCEL_URL = "https://agent-loft.com"; // ← replace with Stripe cancellation link
+const WIZARD_COMPLETE_URL =
+  "https://n8n.agent-loft.com/webhook/REPLACE_WITH_WIZARD_WEBHOOK"; // ← update with n8n webhook that sets WIZZARD=false
 
 /* ─── State ─────────────────────────────────────────────────── */
 let currentEmail = null;
@@ -35,6 +37,16 @@ let activeUUID = null;
 let activeAgentInfo = null;
 let chatId = null; // generated on first panel open
 let talkOpen = false;
+
+// Wizard state
+let wizardPhase = null; // 'skills' | 'integrations' | 'fields' | 'review'
+let wizardSkillsData = null; // cached from skills.json
+let wizardIntegrationsData = null; // cached from integrations.json
+let wizardSelectedSkills = new Set();
+let wizardSelectedIntegrations = new Set();
+let wizardFieldValues = {}; // { stepIndex: { fieldKey: value } }
+let wizardIntegrationStep = 0; // current index in fields phase
+let wizardSelectedIntegrationList = []; // ordered list of selected integration objects
 
 /* ─── Debug logger ─────────────────────────────────────────── */
 function dbg(label, data) {
@@ -320,6 +332,7 @@ function showApp() {
 }
 
 function populateDemoShell() {
+  hide("wizard-card");
   // Header
   document.getElementById("user-email-label").textContent = "preview";
   renderComment("My AI Assistant");
@@ -486,6 +499,7 @@ function selectAgent(uuid) {
   cancelComment();
   renderComment("");
 
+  hide("wizard-card");
   loadKeys(uuid);
   loadBackups(uuid);
   loadAgentInfo(uuid);
@@ -505,6 +519,7 @@ async function loadAgentInfo(uuid) {
   const body = document.getElementById("server-info-body");
   body.innerHTML = '<div class="loading-row"><div class="spinner"></div></div>';
   activeAgentInfo = null;
+  hide("wizard-card");
 
   try {
     const _infoUrl = `${AGENT_INFO_URL}?uuid=${encodeURIComponent(uuid)}`;
@@ -524,6 +539,7 @@ async function loadAgentInfo(uuid) {
     activeAgentInfo = info;
     renderAgentInfo(info);
     renderComment(info.comment);
+    loadWizard(info);
   } catch (err) {
     body.innerHTML = `<p class="inline-error">${escHtml(err.message)}</p>`;
   }
@@ -1074,6 +1090,287 @@ function renderContract(data) {
       </div>
       ${cancelHtml}
     </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   WIZARD (Integrations setup)
+═══════════════════════════════════════════════════════════════ */
+function loadWizard(info) {
+  const disabled =
+    info.WIZZARD === false || String(info.WIZZARD).toLowerCase() === "false";
+  if (disabled) {
+    hide("wizard-card");
+    return;
+  }
+  // Reset selection state each time (JSON data cached across calls)
+  wizardPhase = "skills";
+  wizardSelectedSkills = new Set();
+  wizardSelectedIntegrations = new Set();
+  wizardFieldValues = {};
+  wizardIntegrationStep = 0;
+  wizardSelectedIntegrationList = [];
+  document.getElementById("wizard-card").style.display = "block";
+  renderWizardStep();
+}
+
+async function renderWizardStep() {
+  const body = document.getElementById("wizard-body");
+
+  if (wizardPhase === "skills") {
+    if (!wizardSkillsData) {
+      body.innerHTML =
+        '<div class="loading-row"><div class="spinner"></div></div>';
+      try {
+        const res = await fetch("skills.json");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        wizardSkillsData = await res.json();
+      } catch (err) {
+        body.innerHTML = `<p class="inline-error" style="padding:10px 16px">${escHtml(err.message)}</p>`;
+        return;
+      }
+    }
+    renderWizardSkills();
+  } else if (wizardPhase === "integrations") {
+    if (!wizardIntegrationsData) {
+      body.innerHTML =
+        '<div class="loading-row"><div class="spinner"></div></div>';
+      try {
+        const res = await fetch("integrations.json");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        wizardIntegrationsData = await res.json();
+      } catch (err) {
+        body.innerHTML = `<p class="inline-error" style="padding:10px 16px">${escHtml(err.message)}</p>`;
+        return;
+      }
+    }
+    renderWizardIntegrations();
+  } else if (wizardPhase === "fields") {
+    renderWizardFields();
+  } else if (wizardPhase === "review") {
+    renderWizardReview();
+  }
+
+  updateWizardNav();
+}
+
+function renderWizardSkills() {
+  const items = (wizardSkillsData || [])
+    .map(
+      (s, i) =>
+        `<label class="wizard-list-item" data-name="${escAttr(s.name.toLowerCase())}">
+          <input type="checkbox" ${wizardSelectedSkills.has(i) ? "checked" : ""}
+                 onchange="wizardToggleSkill(${i},this.checked)">
+          <span class="wizard-list-item-name">${escHtml(s.name)}</span>
+        </label>`,
+    )
+    .join("");
+
+  document.getElementById("wizard-body").innerHTML = `
+    <div style="padding:12px 16px 4px">
+      <input class="wizard-search" type="text" placeholder="Search skills…"
+             oninput="wizardFilter(this,'wizard-skills-list')">
+      <div class="wizard-list" id="wizard-skills-list">${items}</div>
+    </div>`;
+}
+
+function renderWizardIntegrations() {
+  const items = (wizardIntegrationsData || [])
+    .map(
+      (s, i) =>
+        `<label class="wizard-list-item" data-name="${escAttr(s.name.toLowerCase())}">
+          <input type="checkbox" ${wizardSelectedIntegrations.has(i) ? "checked" : ""}
+                 onchange="wizardToggleIntegration(${i},this.checked)">
+          <span class="wizard-list-item-name">${escHtml(s.name)}</span>
+        </label>`,
+    )
+    .join("");
+
+  document.getElementById("wizard-body").innerHTML = `
+    <div style="padding:12px 16px 4px">
+      <input class="wizard-search" type="text" placeholder="Search integrations…"
+             oninput="wizardFilter(this,'wizard-integrations-list')">
+      <div class="wizard-list" id="wizard-integrations-list">${items}</div>
+    </div>`;
+}
+
+function renderWizardFields() {
+  const integration = wizardSelectedIntegrationList[wizardIntegrationStep];
+  if (!integration) {
+    wizardPhase = "review";
+    renderWizardStep();
+    return;
+  }
+  const saved = wizardFieldValues[wizardIntegrationStep] || {};
+  const fields = integration.fields
+    .map(
+      (f) =>
+        `<div class="form-group">
+          <label>${escHtml(f.label)}</label>
+          <input type="${escAttr(f.type || "text")}"
+                 placeholder="${escAttr(f.placeholder || "")}"
+                 value="${escAttr(saved[f.key] || "")}"
+                 oninput="wizardSetField(${wizardIntegrationStep},'${escAttr(f.key)}',this.value)">
+        </div>`,
+    )
+    .join("");
+
+  document.getElementById("wizard-body").innerHTML = `
+    <div class="wizard-fields" style="padding:12px 16px 4px">
+      ${fields}
+      <p class="wizard-signup-hint">Need keys for this app? <a href="${escAttr(
+        integration.signup_url,
+      )}" target="_blank" rel="noopener">${escHtml(integration.signup_label)}</a></p>
+    </div>`;
+}
+
+function renderWizardReview() {
+  const prompt = buildWizardPrompt();
+  document.getElementById("wizard-body").innerHTML = `
+    <div class="wizard-review-area" style="padding:12px 16px 4px">
+      <p class="wizard-review-intro">Review the generated init prompt below, then copy it into your agent's system prompt.</p>
+      <textarea class="wizard-review-textarea" id="wizard-prompt-textarea" readonly>${escHtml(prompt)}</textarea>
+    </div>`;
+}
+
+function buildWizardPrompt() {
+  const parts = [];
+  const skillLines = [];
+  wizardSelectedSkills.forEach((i) => {
+    if (wizardSkillsData && wizardSkillsData[i])
+      skillLines.push(wizardSkillsData[i].prompt);
+  });
+  if (skillLines.length) parts.push("## Skills\n\n" + skillLines.join("\n\n"));
+
+  const intLines = [];
+  wizardSelectedIntegrationList.forEach((integration, stepIdx) => {
+    const values = wizardFieldValues[stepIdx] || {};
+    let prompt = integration.prompt;
+    for (const [k, v] of Object.entries(values)) {
+      prompt = prompt.split(`{${k}}`).join(v || `{${k}}`);
+    }
+    intLines.push(`### ${integration.name}\n${prompt}`);
+  });
+  if (intLines.length)
+    parts.push("## Integrations\n\n" + intLines.join("\n\n"));
+
+  return parts.join("\n\n---\n\n") || "(No skills or integrations selected.)";
+}
+
+function updateWizardNav() {
+  const backBtn = document.getElementById("wizard-back-btn");
+  const nextBtn = document.getElementById("wizard-next-btn");
+  const stepLabel = document.getElementById("wizard-step-label");
+
+  let label = "";
+  if (wizardPhase === "skills") label = "Select Skills";
+  else if (wizardPhase === "integrations") label = "Select Integrations";
+  else if (wizardPhase === "fields") {
+    const int = wizardSelectedIntegrationList[wizardIntegrationStep];
+    label = int ? int.name : "";
+  } else if (wizardPhase === "review") label = "Review Init Prompt";
+  if (stepLabel) stepLabel.textContent = label;
+
+  if (backBtn) backBtn.style.display = wizardPhase === "skills" ? "none" : "";
+  if (nextBtn)
+    nextBtn.textContent =
+      wizardPhase === "review" ? "Copy & Finish" : "Next \u2192";
+}
+
+function wizardToggleSkill(index, checked) {
+  if (checked) wizardSelectedSkills.add(index);
+  else wizardSelectedSkills.delete(index);
+}
+
+function wizardToggleIntegration(index, checked) {
+  if (checked) wizardSelectedIntegrations.add(index);
+  else wizardSelectedIntegrations.delete(index);
+}
+
+function wizardSetField(stepKey, fieldKey, value) {
+  if (!wizardFieldValues[stepKey]) wizardFieldValues[stepKey] = {};
+  wizardFieldValues[stepKey][fieldKey] = value;
+}
+
+function wizardFilter(input, listId) {
+  const q = input.value.toLowerCase().trim();
+  const list = document.getElementById(listId);
+  if (!list) return;
+  list.querySelectorAll(".wizard-list-item").forEach((item) => {
+    const name = (item.dataset.name || "").toLowerCase();
+    item.style.display = !q || name.includes(q) ? "" : "none";
+  });
+}
+
+function wizardNext() {
+  if (wizardPhase === "skills") {
+    wizardPhase = "integrations";
+    renderWizardStep();
+  } else if (wizardPhase === "integrations") {
+    wizardSelectedIntegrationList = (wizardIntegrationsData || []).filter(
+      (_, i) => wizardSelectedIntegrations.has(i),
+    );
+    wizardIntegrationStep = 0;
+    wizardPhase = wizardSelectedIntegrationList.length ? "fields" : "review";
+    renderWizardStep();
+  } else if (wizardPhase === "fields") {
+    wizardIntegrationStep++;
+    if (wizardIntegrationStep >= wizardSelectedIntegrationList.length) {
+      wizardPhase = "review";
+    }
+    renderWizardStep();
+  } else if (wizardPhase === "review") {
+    wizardCopyAndFinish();
+  }
+}
+
+function wizardBack() {
+  if (wizardPhase === "integrations") {
+    wizardPhase = "skills";
+    renderWizardStep();
+  } else if (wizardPhase === "fields") {
+    if (wizardIntegrationStep > 0) {
+      wizardIntegrationStep--;
+    } else {
+      wizardPhase = "integrations";
+    }
+    renderWizardStep();
+  } else if (wizardPhase === "review") {
+    if (wizardSelectedIntegrationList.length > 0) {
+      wizardPhase = "fields";
+      wizardIntegrationStep = wizardSelectedIntegrationList.length - 1;
+    } else {
+      wizardPhase = "integrations";
+    }
+    renderWizardStep();
+  }
+}
+
+async function wizardCopyAndFinish() {
+  const textarea = document.getElementById("wizard-prompt-textarea");
+  if (!textarea) return;
+  try {
+    await navigator.clipboard.writeText(textarea.value);
+    toast("Init prompt copied to clipboard.", "success");
+  } catch (_) {
+    toast("Could not copy to clipboard — please copy manually.", "error");
+    return;
+  }
+  // Mark wizard complete via webhook (non-fatal if it fails)
+  try {
+    await fetch(WIZARD_COMPLETE_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        uuid: activeUUID,
+        email: currentEmail,
+        key: "WIZZARD",
+        value: "false",
+      }),
+    });
+  } catch (_) {
+    /* non-fatal */
+  }
+  hide("wizard-card");
 }
 
 /* ═══════════════════════════════════════════════════════════════

@@ -1562,3 +1562,145 @@ body.auth-layout #signin-btn {
     color: var(--danger);
     border-color: var(--danger);
 }
+
+/* ─── Wizard (Integrations setup) ─────────────────────────────── */
+.wizard-step-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+.wizard-search {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 13px;
+    padding: 7px 10px;
+    outline: none;
+    margin-bottom: 8px;
+}
+
+.wizard-search:focus {
+    border-color: var(--accent);
+}
+
+.wizard-search::placeholder {
+    color: var(--text-muted);
+}
+
+.wizard-list {
+    display: flex;
+    flex-direction: column;
+    max-height: 240px;
+    overflow-y: auto;
+    gap: 1px;
+}
+
+.wizard-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.wizard-list::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+}
+
+.wizard-list-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background 0.1s;
+    user-select: none;
+}
+
+.wizard-list-item:hover {
+    background: var(--bg-hover);
+}
+
+.wizard-list-item input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--accent);
+    cursor: pointer;
+    flex-shrink: 0;
+    margin: 0;
+}
+
+.wizard-list-item-name {
+    font-size: 13px;
+    color: var(--text);
+}
+
+.wizard-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    margin-top: 4px;
+}
+
+.wizard-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.wizard-signup-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.wizard-signup-hint a {
+    color: var(--text-muted);
+    text-decoration: none;
+}
+
+.wizard-signup-hint a:hover {
+    color: var(--text);
+}
+
+.wizard-review-area {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.wizard-review-intro {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.wizard-review-textarea {
+    display: block;
+    width: 100%;
+    min-height: 180px;
+    box-sizing: border-box;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 12px;
+    font-family:
+        ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, monospace;
+    padding: 10px 12px;
+    resize: vertical;
+    outline: none;
+    line-height: 1.5;
+}
+
+.wizard-review-textarea:focus {
+    border-color: var(--accent);
+}
