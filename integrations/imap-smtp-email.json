@@ -1,0 +1,14 @@
+{
+  "name": "IMAP / SMTP Email",
+  "description": "Read, send, and manage email from any standard mailbox.",
+  "fields": [
+    {"label": "Email Address", "key": "email", "type": "text", "placeholder": "you@yourdomain.com"},
+    {"label": "Your Name", "key": "display_name", "type": "text", "placeholder": "Jane Smith"},
+    {"label": "IMAP Host", "key": "imap_host", "type": "text", "placeholder": "imap.hostinger.com"},
+    {"label": "SMTP Host", "key": "smtp_host", "type": "text", "placeholder": "smtp.hostinger.com"},
+    {"label": "Password", "key": "password", "type": "password", "placeholder": ""}
+  ],
+  "signup_url": "https://hostinger.com",
+  "signup_label": "Need a domain or email? Sign up at Hostinger",
+  "prompt": "Create a skill for IMAP / SMTP Email.\n\nUse the himalaya CLI to read, send, and manage emails.\n\n## Install himalaya (if not already installed)\n\ncurl -sSL https://raw.githubusercontent.com/pimalaya/himalaya/master/install.sh | PREFIX=~/.local sh\nexport PATH=\"$HOME/.local/bin:$PATH\"  # add to ~/.bashrc if not present\nhimalaya --version\n\n## Write the config file\n\nCreate ~/.config/himalaya/config.toml with exactly this content:\n\n[accounts.default]\ndefault = true\nemail = \"{email}\"\ndisplay-name = \"{display_name}\"\n\nfolder.aliases.inbox  = \"INBOX\"\nfolder.aliases.sent   = \"Sent\"\nfolder.aliases.drafts = \"Drafts\"\nfolder.aliases.trash  = \"Trash\"\n\nbackend.type                = \"imap\"\nbackend.host                = \"{imap_host}\"\nbackend.port                = 993\nbackend.encryption.type     = \"tls\"\nbackend.login               = \"{email}\"\nbackend.auth.type           = \"password\"\nbackend.auth.raw            = \"{password}\"\n\nmessage.send.backend.type              = \"smtp\"\nmessage.send.backend.host              = \"{smtp_host}\"\nmessage.send.backend.port             = 587\nmessage.send.backend.encryption.type   = \"start-tls\"\nmessage.send.backend.login             = \"{email}\"\nmessage.send.backend.auth.type         = \"password\"\nmessage.send.backend.auth.raw          = \"{password}\"\n\n## Key commands\n\nhimalaya folder list\nhimalaya envelope list\nhimalaya envelope list -f Sent\nhimalaya message read <id>\nhimalaya message reply <id>\nhimalaya message forward <id>\nhimalaya message delete <id>\nhimalaya --output json envelope list\n\n## Sending email\n\nprintf 'From: {display_name} <{email}>\\nTo: recipient@example.com\\nSubject: Hello\\n\\nBody text here.' | himalaya message send\n\n## Solved cases log\n\nEvery time you successfully solve an email task, append a short entry to ~/email_solutions.md:\n\n  ## <short title>  (<date>)\n  Goal: <one sentence>\n  Key commands: <the himalaya commands or shell pipeline that worked>\n  Gotchas: <anything non-obvious>\n\nRead ~/email_solutions.md at the start of each task — if a matching solved case exists, reuse it directly."
+}

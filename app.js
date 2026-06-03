@@ -39,8 +39,10 @@ let talkOpen = false;
 
 // Wizard state
 let wizardPhase = null; // 'skills' | 'integrations' | 'fields' | 'review'
-let wizardSkillsData = null; // cached from skills.json
-let wizardIntegrationsData = null; // cached from integrations.json
+let wizardSkillsData = null; // cached from skills/index.json
+let wizardIntegrationsData = null; // cached from integrations/index.json
+let wizardSkillsCache = {}; // { filename: full skill object (with prompt) }
+let wizardIntegrationsCache = {}; // { filename: full integration object (with prompt) }
 let wizardSelectedSkills = new Set();
 let wizardSelectedIntegrations = new Set();
 let wizardFieldValues = {}; // { stepIndex: { fieldKey: value } }
@@ -1116,12 +1118,18 @@ function renderContract(data) {
    WIZARD (Integrations setup)
 ═══════════════════════════════════════════════════════════════ */
 function loadWizard(info) {
-  // API returns lowercase key — check both casings defensively
+  // Check both key casings; strip n8n's extra surrounding quotes before comparing
   const rawVal = info.wizzard ?? info.WIZZARD;
-  const disabled =
-    rawVal === false || String(rawVal ?? "").toLowerCase() === "false";
+  const strVal = String(rawVal ?? "")
+    .replace(/^"|"$/g, "")
+    .trim()
+    .toLowerCase();
+  const disabled = rawVal === false || strVal === "false";
+
+  const tb = document.getElementById("wizard-toggle-btn");
   if (disabled) {
     hide("wizard-card");
+    if (tb) tb.textContent = "Integrations";
     return;
   }
   // Reset selection state each time (JSON data cached across calls)
@@ -1132,6 +1140,7 @@ function loadWizard(info) {
   wizardIntegrationStep = 0;
   wizardSelectedIntegrationList = [];
   show("wizard-card");
+  if (tb) tb.textContent = "Backup";
   renderWizardStep();
 }
 
@@ -1139,31 +1148,49 @@ async function renderWizardStep() {
   const body = document.getElementById("wizard-body");
 
   if (wizardPhase === "skills") {
-    if (!wizardSkillsData) {
-      body.innerHTML =
-        '<div class="loading-row"><div class="spinner"></div></div>';
-      try {
-        const res = await fetch("skills.json");
+    body.innerHTML =
+      '<div class="loading-row"><div class="spinner"></div></div>';
+    try {
+      if (!wizardSkillsData) {
+        const res = await fetch("skills/index.json");
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         wizardSkillsData = await res.json();
-      } catch (err) {
-        body.innerHTML = `<p class="inline-error" style="padding:10px 16px">${escHtml(err.message)}</p>`;
-        return;
       }
+      await Promise.all(
+        wizardSkillsData.map(async (file) => {
+          if (!wizardSkillsCache[file]) {
+            const res = await fetch(`skills/${file}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            wizardSkillsCache[file] = await res.json();
+          }
+        }),
+      );
+    } catch (err) {
+      body.innerHTML = `<p class="inline-error" style="padding:10px 16px">${escHtml(err.message)}</p>`;
+      return;
     }
     renderWizardSkills();
   } else if (wizardPhase === "integrations") {
-    if (!wizardIntegrationsData) {
-      body.innerHTML =
-        '<div class="loading-row"><div class="spinner"></div></div>';
-      try {
-        const res = await fetch("integrations.json");
+    body.innerHTML =
+      '<div class="loading-row"><div class="spinner"></div></div>';
+    try {
+      if (!wizardIntegrationsData) {
+        const res = await fetch("integrations/index.json");
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         wizardIntegrationsData = await res.json();
-      } catch (err) {
-        body.innerHTML = `<p class="inline-error" style="padding:10px 16px">${escHtml(err.message)}</p>`;
-        return;
       }
+      await Promise.all(
+        wizardIntegrationsData.map(async (file) => {
+          if (!wizardIntegrationsCache[file]) {
+            const res = await fetch(`integrations/${file}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            wizardIntegrationsCache[file] = await res.json();
+          }
+        }),
+      );
+    } catch (err) {
+      body.innerHTML = `<p class="inline-error" style="padding:10px 16px">${escHtml(err.message)}</p>`;
+      return;
     }
     renderWizardIntegrations();
   } else if (wizardPhase === "fields") {
@@ -1177,14 +1204,17 @@ async function renderWizardStep() {
 
 function renderWizardSkills() {
   const items = (wizardSkillsData || [])
-    .map(
-      (s, i) =>
-        `<label class="wizard-list-item" data-name="${escAttr(s.name.toLowerCase())}">
+    .map((file, i) => {
+      const s = wizardSkillsCache[file] || {};
+      return `<label class="wizard-list-item" data-name="${escAttr((s.name || "").toLowerCase())}" data-desc="${escAttr((s.description || "").toLowerCase())}">
           <input type="checkbox" ${wizardSelectedSkills.has(i) ? "checked" : ""}
                  onchange="wizardToggleSkill(${i},this.checked)">
-          <span class="wizard-list-item-name">${escHtml(s.name)}</span>
-        </label>`,
-    )
+          <span class="wizard-list-item-content">
+            <span class="wizard-list-item-name">${escHtml(s.name || file)}</span>
+            ${s.description ? `<span class="wizard-list-item-desc">${escHtml(s.description)}</span>` : ""}
+          </span>
+        </label>`;
+    })
     .join("");
 
   document.getElementById("wizard-body").innerHTML = `
@@ -1197,14 +1227,17 @@ function renderWizardSkills() {
 
 function renderWizardIntegrations() {
   const items = (wizardIntegrationsData || [])
-    .map(
-      (s, i) =>
-        `<label class="wizard-list-item" data-name="${escAttr(s.name.toLowerCase())}">
+    .map((file, i) => {
+      const s = wizardIntegrationsCache[file] || {};
+      return `<label class="wizard-list-item" data-name="${escAttr((s.name || "").toLowerCase())}" data-desc="${escAttr((s.description || "").toLowerCase())}">
           <input type="checkbox" ${wizardSelectedIntegrations.has(i) ? "checked" : ""}
                  onchange="wizardToggleIntegration(${i},this.checked)">
-          <span class="wizard-list-item-name">${escHtml(s.name)}</span>
-        </label>`,
-    )
+          <span class="wizard-list-item-content">
+            <span class="wizard-list-item-name">${escHtml(s.name || file)}</span>
+            ${s.description ? `<span class="wizard-list-item-desc">${escHtml(s.description)}</span>` : ""}
+          </span>
+        </label>`;
+    })
     .join("");
 
   document.getElementById("wizard-body").innerHTML = `
@@ -1216,7 +1249,8 @@ function renderWizardIntegrations() {
 }
 
 function renderWizardFields() {
-  const integration = wizardSelectedIntegrationList[wizardIntegrationStep];
+  const file = wizardSelectedIntegrationList[wizardIntegrationStep];
+  const integration = file ? wizardIntegrationsCache[file] : null;
   if (!integration) {
     wizardPhase = "review";
     renderWizardStep();
@@ -1224,16 +1258,18 @@ function renderWizardFields() {
   }
   const saved = wizardFieldValues[wizardIntegrationStep] || {};
   const fields = integration.fields
-    .map(
-      (f) =>
-        `<div class="form-group">
-          <label>${escHtml(f.label)}</label>
-          <input type="${escAttr(f.type || "text")}"
+    .map((f) => {
+      const val = saved[f.key] || "";
+      const input =
+        f.type === "textarea"
+          ? `<textarea placeholder="${escAttr(f.placeholder || "")}" rows="6"
+                 oninput="wizardSetField(${wizardIntegrationStep},'${escAttr(f.key)}',this.value)">${escHtml(val)}</textarea>`
+          : `<input type="${escAttr(f.type || "text")}"
                  placeholder="${escAttr(f.placeholder || "")}"
-                 value="${escAttr(saved[f.key] || "")}"
-                 oninput="wizardSetField(${wizardIntegrationStep},'${escAttr(f.key)}',this.value)">
-        </div>`,
-    )
+                 value="${escAttr(val)}"
+                 oninput="wizardSetField(${wizardIntegrationStep},'${escAttr(f.key)}',this.value)">`;
+      return `<div class="form-group"><label>${escHtml(f.label)}</label>${input}</div>`;
+    })
     .join("");
 
   document.getElementById("wizard-body").innerHTML = `
@@ -1256,22 +1292,31 @@ function renderWizardReview() {
 
 function buildWizardPrompt() {
   const parts = [];
+
   const skillLines = [];
-  wizardSelectedSkills.forEach((i) => {
-    if (wizardSkillsData && wizardSkillsData[i])
-      skillLines.push(wizardSkillsData[i].prompt);
-  });
+  for (const i of wizardSelectedSkills) {
+    const file = wizardSkillsData && wizardSkillsData[i];
+    const skill = file && wizardSkillsCache[file];
+    if (skill && skill.prompt) skillLines.push(skill.prompt);
+  }
   if (skillLines.length) parts.push("## Skills\n\n" + skillLines.join("\n\n"));
 
   const intLines = [];
-  wizardSelectedIntegrationList.forEach((integration, stepIdx) => {
+  for (
+    let stepIdx = 0;
+    stepIdx < wizardSelectedIntegrationList.length;
+    stepIdx++
+  ) {
+    const file = wizardSelectedIntegrationList[stepIdx];
+    const integration = wizardIntegrationsCache[file];
+    if (!integration) continue;
     const values = wizardFieldValues[stepIdx] || {};
-    let prompt = integration.prompt;
+    let prompt = integration.prompt || "";
     for (const [k, v] of Object.entries(values)) {
       prompt = prompt.split(`{${k}}`).join(v || `{${k}}`);
     }
     intLines.push(`### ${integration.name}\n${prompt}`);
-  });
+  }
   if (intLines.length)
     parts.push("## Integrations\n\n" + intLines.join("\n\n"));
 
@@ -1287,15 +1332,21 @@ function updateWizardNav() {
   if (wizardPhase === "skills") label = "Select Skills";
   else if (wizardPhase === "integrations") label = "Select Integrations";
   else if (wizardPhase === "fields") {
-    const int = wizardSelectedIntegrationList[wizardIntegrationStep];
+    const file = wizardSelectedIntegrationList[wizardIntegrationStep];
+    const int = file ? wizardIntegrationsCache[file] : null;
     label = int ? int.name : "";
   } else if (wizardPhase === "review") label = "Review Init Prompt";
   if (cardTitle) cardTitle.textContent = label;
 
-  if (backBtn) backBtn.style.display = wizardPhase === "skills" ? "none" : "";
-  if (nextBtn)
+  if (backBtn) {
+    backBtn.style.display = wizardPhase === "skills" ? "none" : "";
+    backBtn.onclick = wizardBack;
+  }
+  if (nextBtn) {
     nextBtn.textContent =
       wizardPhase === "review" ? "Copy & Finish" : "Next \u2192";
+    nextBtn.onclick = wizardNext;
+  }
 }
 
 function wizardToggleSkill(index, checked) {
@@ -1319,7 +1370,9 @@ function wizardFilter(input, listId) {
   if (!list) return;
   list.querySelectorAll(".wizard-list-item").forEach((item) => {
     const name = (item.dataset.name || "").toLowerCase();
-    item.style.display = !q || name.includes(q) ? "" : "none";
+    const desc = (item.dataset.desc || "").toLowerCase();
+    item.style.display =
+      !q || name.includes(q) || desc.includes(q) ? "" : "none";
   });
 }
 
@@ -1631,9 +1684,15 @@ async function sendChat() {
 }
 
 async function sendReferral() {
+  const nameInput = document.getElementById("refer-name");
   const input = document.getElementById("refer-email");
   const btn = document.getElementById("refer-send-btn");
+  const name = nameInput.value.trim();
   const email = input.value.trim();
+  if (!name) {
+    toast("Please enter your name.", "warning");
+    return;
+  }
   if (!email) {
     toast("Please enter your friend\u2019s email.", "warning");
     return;
@@ -1649,7 +1708,12 @@ async function sendReferral() {
     const res = await fetch(REFERRAL_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ referrer: currentEmail, friend_email: email }),
+      body: JSON.stringify({
+        referrer: currentEmail,
+        referrer_name: name,
+        friend_email: email,
+        uuid: activeUUID,
+      }),
     });
     if (!res.ok) throw new Error(`Failed to send invite (HTTP ${res.status}).`);
     const json = await res.json().catch(() => null);
@@ -1663,7 +1727,10 @@ async function sendReferral() {
       success ? result : "This email address has already been claimed.",
       success,
     );
-    if (success) input.value = "";
+    if (success) {
+      input.value = "";
+      nameInput.value = "";
+    }
   } catch (err) {
     toast(err.message, "error");
   } finally {

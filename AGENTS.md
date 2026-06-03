@@ -20,11 +20,19 @@ Single-page user portal for **agent-loft.com** — lets customers sign up, log i
 ### File map
 
 ```
-index.html      ← all markup — auth card + app shell + confirm dialog
-styles.css      ← all styles — design tokens, layout, components
-app.js          ← all logic — auth, agents, keys, password, restart, backups, contract
-start           ← dev server launcher (live-server)
-AGENTS.md       ← this file
+index.html              ← all markup — auth card + app shell + confirm dialog
+styles.css              ← all styles — design tokens, layout, components
+app.js                  ← all logic — auth, agents, keys, password, restart, backups, contract
+start                   ← dev server launcher (live-server)
+AGENTS.md               ← this file
+
+skills/
+  index.json            ← summary: [{ name, file, description }] — loaded on wizard step 1
+  <slug>.json           ← one file per skill: { name, description, prompt }
+
+integrations/
+  index.json            ← summary: [{ name, file, description, fields[], signup_url, signup_label }] — loaded on wizard step 2 + fields
+  <slug>.json           ← one file per integration: adds prompt to the index entry
 ```
 
 ---
@@ -382,12 +390,36 @@ There is no global keys, backups, contract, or wizard-JSON state that is re-fetc
 
 ## Wizard Data Files
 
-| File | Shape | Purpose |
-|---|---|---|
-| `skills.json` | `[{ name, prompt }]` | Skills the agent can have. `prompt` is appended verbatim to the init prompt when selected. |
-| `integrations.json` | `[{ name, fields[], signup_url, signup_label, prompt }]` | Third-party integrations. `fields` = `[{ label, key, type, placeholder }]`. `prompt` uses `{key}` placeholders replaced with user input. |
+### Skills
 
-Both files are fetched lazily on first access and cached in `wizardSkillsData` / `wizardIntegrationsData` for the session. They are plain JSON — no build step required.
+`skills/index.json` — an array of filenames; fetched once on wizard step 1, cached in `wizardSkillsData`:
+```json
+["copywriting.json", "cold-email.json"]
+```
+
+`skills/<slug>.json` — fetched in parallel when the skills step opens, cached in `wizardSkillsCache`:
+```json
+{ "name": "Copywriting", "description": "Short blurb shown in the checklist.", "prompt": "Full skill prompt text." }
+```
+
+### Integrations
+
+`integrations/index.json` — an array of filenames; fetched once on wizard step 2, cached in `wizardIntegrationsData`:
+```json
+["odoo-community.json", "imap-smtp-email.json"]
+```
+
+`integrations/<slug>.json` — fetched in parallel when the integrations step opens, cached in `wizardIntegrationsCache`. Contains everything needed for the checklist, fields UI, and prompt:
+```json
+{ "name": "ODOO Community", "description": "...",
+  "fields": [{ "label", "key", "type", "placeholder" }],
+  "signup_url": "...", "signup_label": "...",
+  "prompt": "Prompt with {placeholder} substitutions." }
+```
+
+`prompt` uses `{key}` placeholders that are replaced with user input from the fields form.
+
+All JSON files are plain static files — no build step required.
 
 ---
 
