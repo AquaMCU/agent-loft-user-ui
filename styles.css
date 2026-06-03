@@ -1359,6 +1359,68 @@ body.auth-layout .pricing-badge {
     color: var(--accent);
     font-weight: 500;
 }
+
+/* Coupon box */
+.coupon-box {
+    display: none;
+}
+body.auth-layout .coupon-box {
+    display: block;
+    margin: 10px 24px 0;
+}
+.coupon-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.coupon-input {
+    width: 100%;
+    padding: 8px 36px 8px 12px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.15s;
+    box-sizing: border-box;
+}
+.coupon-input::placeholder {
+    color: var(--text-muted);
+}
+.coupon-input:focus {
+    border-color: var(--accent);
+}
+.coupon-input.coupon-input-error {
+    border-color: var(--danger);
+}
+.coupon-spinner {
+    position: absolute;
+    right: 10px;
+    display: flex;
+    align-items: center;
+}
+.coupon-error {
+    margin-top: 5px;
+    font-size: 11px;
+    color: var(--danger);
+}
+.coupon-success {
+    display: none;
+}
+body.auth-layout .coupon-success {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 10px 24px 0;
+    padding: 8px 12px;
+    background: rgba(63, 201, 126, 0.1);
+    border: 1px solid rgba(63, 201, 126, 0.3);
+    border-radius: var(--radius);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--success);
+}
 body.auth-layout .auth-forms-divider {
     width: 1px;
     align-self: stretch;

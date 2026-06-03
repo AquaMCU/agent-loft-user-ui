@@ -27,10 +27,13 @@ const CONTRACT_URL =
   "https://n8n.agent-loft.com/webhook/18591766-147e-4bcb-b9ac-b0f9a92e74bf";
 const CONTRACT_EXTEND_URL = "https://agent-loft.com"; // ← replace with Stripe payment link
 const CONTRACT_CANCEL_URL = "https://agent-loft.com"; // ← replace with Stripe cancellation link
+const COUPON_URL =
+  "https://n8n.agent-loft.com/webhook/fd6375cb-6d73-4482-bfa3-ef8365f43a67";
 // WIZZARD=false is written via AGENT_INFO_URL (POST { uuid, key, value })
 
 /* ─── State ─────────────────────────────────────────────────── */
 let currentEmail = null;
+let couponApplied = false;
 let agents = [];
 let activeUUID = null;
 let activeAgentInfo = null;
@@ -265,6 +268,55 @@ async function doSignUp() {
 /* ═══════════════════════════════════════════════════════════════
    AUTH — sign out
 ═══════════════════════════════════════════════════════════════ */
+/* ─── Coupon ────────────────────────────────────────────────── */
+function handleCouponKey(e) {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    applyCoupon();
+  }
+}
+
+async function applyCoupon() {
+  const input = document.getElementById("coupon-input");
+  const spinner = document.getElementById("coupon-spinner");
+  const errorEl = document.getElementById("coupon-error");
+  const code = input.value.trim();
+
+  if (!code) return;
+
+  input.disabled = true;
+  input.classList.remove("coupon-input-error");
+  errorEl.style.display = "none";
+  spinner.style.display = "";
+
+  try {
+    const res = await fetch(COUPON_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code }),
+    });
+
+    const text = (await res.text()).trim();
+    if (text === "OK") {
+      // Valid coupon — hide the box, show success
+      couponApplied = true;
+      document.getElementById("coupon-box").style.display = "none";
+      document.getElementById("coupon-success").style.display = "";
+    } else {
+      input.classList.add("coupon-input-error");
+      errorEl.style.display = "";
+      input.disabled = false;
+    }
+  } catch (err) {
+    input.classList.add("coupon-input-error");
+    errorEl.textContent = "Could not validate coupon. Try again.";
+    errorEl.style.display = "";
+    input.disabled = false;
+  } finally {
+    spinner.style.display = "none";
+  }
+}
+
 function doSignOut() {
   localStorage.removeItem("al_email");
   currentEmail = null;
@@ -290,6 +342,20 @@ function doSignOut() {
   document.getElementById("signup-success").style.display = "none";
   document.getElementById("signup-email").value = "";
   document.getElementById("signup-password").value = "";
+
+  // Reset coupon state
+  couponApplied = false;
+  const couponBox = document.getElementById("coupon-box");
+  if (couponBox) couponBox.style.display = "";
+  const couponSuccessEl = document.getElementById("coupon-success");
+  if (couponSuccessEl) couponSuccessEl.style.display = "none";
+  const couponInput = document.getElementById("coupon-input");
+  if (couponInput) {
+    couponInput.value = "";
+    couponInput.classList.remove("coupon-input-error");
+  }
+  const couponError = document.getElementById("coupon-error");
+  if (couponError) couponError.style.display = "none";
 
   showAuth();
 }

@@ -150,21 +150,53 @@
                             4,99 <span>USD / month</span>
                         </div>
                         <div class="pricing-term">Monthly termination</div>
-                        <div class="pricing-bonus">
-                            <svg
-                                width="11"
-                                height="11"
-                                viewBox="0 0 24 24"
-                                fill="currentColor"
-                                stroke="none"
-                            >
-                                <polygon
-                                    points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
-                                />
-                            </svg>
-                            5 USD OpenRouter signup credits
+                    </div>
+                    <div id="coupon-box" class="coupon-box">
+                        <div class="coupon-input-wrap">
+                            <input
+                                type="text"
+                                id="coupon-input"
+                                class="coupon-input"
+                                placeholder="Coupon code"
+                                onkeydown="handleCouponKey(event)"
+                                autocomplete="off"
+                                spellcheck="false"
+                            />
+                            <span
+                                id="coupon-spinner"
+                                class="coupon-spinner"
+                                style="display: none"
+                                ><div class="spinner spinner-sm"></div
+                            ></span>
+                        </div>
+                        <div
+                            id="coupon-error"
+                            class="coupon-error"
+                            style="display: none"
+                        >
+                            Invalid coupon code.
                         </div>
                     </div>
+                    <div
+                        id="coupon-success"
+                        class="coupon-success"
+                        style="display: none"
+                    >
+                        <svg
+                            width="13"
+                            height="13"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="3"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        5 USD OpenRouter credits added &mdash; Order now below
+                    </div>
+
                     <form
                         id="signup-form"
                         class="auth-form"
