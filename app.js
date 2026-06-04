@@ -201,25 +201,28 @@ async function doSignUp() {
   }
 
   const btn = document.getElementById("signup-btn");
-  btnLoad(btn, "Creating account\u2026");
+  btnLoad(btn, "Hiring agent\u2026");
 
   try {
-    dbg("\u2192 Sign Up", AUTH_URL);
-    const payload = { email, password, agent, location };
-    const res = await fetch(AUTH_URL, {
+    // Step 1: authenticate to get a session, then open the agent panel
+    dbg("\u2192 Hire Agent – auth", AUTH_URL);
+    const authRes = await fetch(AUTH_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ email, password }),
     });
-    if (!res.ok) throw new Error("Sign up failed. Please try again later.");
+    if (!authRes.ok)
+      throw new Error("Account creation failed. Please try again later.");
 
-    const data = await res.json();
-    dbg("\u2190 Sign Up", data);
-    const raw = Array.isArray(data) ? data[0] : data;
+    const authData = await authRes.json();
+    dbg("\u2190 Hire Agent – auth", authData);
+    const authRaw = Array.isArray(authData) ? authData[0] : authData;
     // unwrap n8n {json:{...}} envelope if present
-    const item =
-      raw && typeof raw === "object" && "json" in raw ? raw.json : raw;
-    const sessionId = item?.sessionid;
+    const authItem =
+      authRaw && typeof authRaw === "object" && "json" in authRaw
+        ? authRaw.json
+        : authRaw;
+    const sessionId = authItem?.sessionid;
     if (!sessionId)
       throw new Error("Account creation failed. Please try again.");
 
@@ -228,13 +231,35 @@ async function doSignUp() {
     setCookie("al_session", sessionId, 30);
     setCookie("al_email", email, 30);
 
-    // Open Stripe checkout if the response includes a URL
-    const checkoutUrl = item?.checkout_url || item?.checkoutUrl || item?.url;
-    if (checkoutUrl && checkoutUrl.startsWith("http"))
-      window.open(checkoutUrl, "_blank");
-
+    // Open the agent panel immediately
     showApp();
     loadAgents();
+
+    // Step 2: trigger agent creation and open Stripe checkout
+    dbg("\u2192 Hire Agent – create", SIGNUP_URL);
+    const createRes = await fetch(SIGNUP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, agent, location }),
+    });
+    if (!createRes.ok) {
+      toast("Agent provisioning failed. Please contact support.", "error");
+      return;
+    }
+
+    const createData = await createRes.json();
+    dbg("\u2190 Hire Agent – create", createData);
+    const createRaw = Array.isArray(createData) ? createData[0] : createData;
+    const createItem =
+      createRaw && typeof createRaw === "object" && "json" in createRaw
+        ? createRaw.json
+        : createRaw;
+
+    // Open Stripe checkout if the response includes a URL
+    const checkoutUrl =
+      createItem?.checkout_url || createItem?.checkoutUrl || createItem?.url;
+    if (checkoutUrl && checkoutUrl.startsWith("http"))
+      window.open(checkoutUrl, "_blank");
   } catch (err) {
     showAuthError("signup-error", err.message);
   } finally {
