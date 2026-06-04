@@ -1605,13 +1605,19 @@ function deleteCookie(name) {
 
 /* ─── Authenticated fetch ───────────────────────────────────── */
 // Wraps fetch() for all webhook calls — injects session header when logged in.
-function apiFetch(url, options = {}) {
-  if (!currentSession) return fetch(url, options);
+async function apiFetch(url, options = {}) {
   const headers = {
     ...(options.headers || {}),
-    "X-Session-Id": currentSession,
+    ...(currentSession ? { "X-Session-Id": currentSession } : {}),
   };
-  return fetch(url, { ...options, headers });
+  const res = await fetch(url, { ...options, headers });
+  if (res.status === 401) {
+    deleteCookie("al_session");
+    deleteCookie("al_email");
+    localStorage.removeItem("al_email");
+    location.reload();
+  }
+  return res;
 }
 
 function escHtml(s) {
