@@ -1027,7 +1027,16 @@ function renderBackups(backups) {
     return;
   }
 
-  const rows = backups
+  const rows = [...backups]
+    .sort((a, b) => {
+      const da = new Date(
+        a.start || a.created_at || a.createdAt || a.date || a.timestamp || 0,
+      );
+      const db = new Date(
+        b.start || b.created_at || b.createdAt || b.date || b.timestamp || 0,
+      );
+      return db - da;
+    })
     .map((b) => {
       const start = formatBackupDate(b.start);
       const id = escAttr(String(b.id || b.name || ""));
