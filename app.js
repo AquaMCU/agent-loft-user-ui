@@ -859,6 +859,7 @@ function togglePwSave(value) {
 
 async function savePassword() {
   const newPw = document.getElementById("pw-new-input").value;
+  const btn = document.getElementById("pw-save-btn");
 
   if (!newPw) {
     toast("Please enter a new password.", "warning");
@@ -869,13 +870,19 @@ async function savePassword() {
     return;
   }
 
+  // Lock the button immediately so a second click can't corrupt the dialog Promise
+  btn.disabled = true;
+
   const ok = await confirmDialog(
     "Update Instance Password",
     "This will immediately update the root password on your server. Make sure to save it somewhere safe. Continue?",
   );
-  if (!ok) return;
 
-  const btn = document.getElementById("pw-save-btn");
+  if (!ok) {
+    btn.disabled = false; // user cancelled — restore button
+    return;
+  }
+
   btnLoad(btn, "Saving\u2026");
 
   try {
