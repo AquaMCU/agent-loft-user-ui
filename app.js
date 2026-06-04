@@ -1780,13 +1780,13 @@ async function sendChat() {
 }
 
 async function sendReferral() {
-  const nameInput = document.getElementById("refer-name");
+  const nameInput = document.getElementById("name");
   const input = document.getElementById("refer-email");
   const btn = document.getElementById("refer-send-btn");
   const name = nameInput.value.trim();
   const email = input.value.trim();
   if (!name) {
-    toast("Please enter your name.", "warning");
+    toast("Please enter your friend\u2019s name.", "warning");
     return;
   }
   if (!email) {
@@ -1806,7 +1806,7 @@ async function sendReferral() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         referrer: currentEmail,
-        referrer_name: name,
+        friend_name: name,
         friend_email: email,
         uuid: activeUUID,
       }),
