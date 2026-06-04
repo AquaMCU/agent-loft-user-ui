@@ -30,9 +30,12 @@ const CONTRACT_CANCEL_URL = "https://agent-loft.com"; // ← replace with Stripe
 const COUPON_URL =
   "https://n8n.agent-loft.com/webhook/fd6375cb-6d73-4482-bfa3-ef8365f43a67";
 // WIZZARD=false is written via AGENT_INFO_URL (POST { uuid, key, value })
+const AUTH_URL =
+  "https://n8n.agent-loft.com/webhook/e256310a-6627-45ba-a221-599751943fe6";
 
 /* ─── State ─────────────────────────────────────────────────── */
 let currentEmail = null;
+let currentSession = null;
 let couponApplied = false;
 let agents = [];
 let activeUUID = null;
@@ -86,9 +89,10 @@ function normalizeAgents(raw) {
    BOOT
 ═══════════════════════════════════════════════════════════════ */
 document.addEventListener("DOMContentLoaded", () => {
-  const saved = localStorage.getItem("al_email");
-  if (saved) {
-    currentEmail = saved;
+  const sessionId = getCookie("al_session");
+  if (sessionId) {
+    currentSession = sessionId;
+    currentEmail = getCookie("al_email") || "";
     showApp();
     loadAgents();
   } else {
@@ -142,26 +146,32 @@ async function doSignIn() {
   btnLoad(btn, "Signing in\u2026");
 
   try {
-    const _agentsUrl = `${AGENTS_URL}?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`;
-    dbg("\u2192 List Agents (sign-in)", _agentsUrl);
-    const res = await fetch(_agentsUrl);
+    dbg("\u2192 Sign In", AUTH_URL);
+    const res = await fetch(AUTH_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
     if (!res.ok)
       throw new Error(
-        "Account not found or service unavailable. Please try again.",
+        "Account not found or incorrect password. Please try again.",
       );
 
-    let data = [];
-    try {
-      data = await res.json();
-    } catch (_) {
-      /* empty body is fine */
-    }
-    dbg("← List Agents (sign-in)", data);
+    const data = await res.json();
+    dbg("\u2190 Sign In", data);
+    const raw = Array.isArray(data) ? data[0] : data;
+    // unwrap n8n {json:{...}} envelope if present
+    const item =
+      raw && typeof raw === "object" && "json" in raw ? raw.json : raw;
+    const sessionId = item?.sessionid;
+    if (!sessionId) throw new Error("Authentication failed. Please try again.");
 
+    currentSession = sessionId;
     currentEmail = email;
-    localStorage.setItem("al_email", email);
+    setCookie("al_session", sessionId, 30);
+    setCookie("al_email", email, 30);
     showApp();
-    processAgents(normalizeAgents(data));
+    loadAgents();
   } catch (err) {
     showAuthError("signin-error", err.message);
   } finally {
@@ -193,74 +203,41 @@ async function doSignUp() {
   const btn = document.getElementById("signup-btn");
   btnLoad(btn, "Creating account\u2026");
 
-  // Open a blank tab NOW (synchronous, while the user gesture is still active)
-  // so the browser doesn't treat it as a blocked popup after the await.
-  const stripeTab = window.open("", "_blank");
-  console.log("[SignUp] stripeTab opened:", stripeTab);
-
   try {
-    const payload = { email, password, agent, server: location };
-    console.log("[SignUp] → POST", SIGNUP_URL, payload);
-    const res = await fetch(SIGNUP_URL, {
+    dbg("\u2192 Sign Up", AUTH_URL);
+    const payload = { email, password, agent, location };
+    const res = await fetch(AUTH_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    console.log("[SignUp] response status:", res.status, res.ok);
     if (!res.ok) throw new Error("Sign up failed. Please try again later.");
 
-    // Webhook returns a plain-text URL — read as text, not JSON
-    const rawText = (await res.text()).trim();
-    console.log("[SignUp] raw response text:", rawText);
-    const checkoutUrl = rawText.startsWith("http") ? rawText : null;
-    console.log("[SignUp] checkoutUrl:", checkoutUrl);
+    const data = await res.json();
+    dbg("\u2190 Sign Up", data);
+    const raw = Array.isArray(data) ? data[0] : data;
+    // unwrap n8n {json:{...}} envelope if present
+    const item =
+      raw && typeof raw === "object" && "json" in raw ? raw.json : raw;
+    const sessionId = item?.sessionid;
+    if (!sessionId)
+      throw new Error("Account creation failed. Please try again.");
 
-    // Navigate the pre-opened tab to the Stripe URL
-    if (checkoutUrl && stripeTab && !stripeTab.closed) {
-      stripeTab.location.href = checkoutUrl;
-    } else if (stripeTab && !stripeTab.closed) {
-      stripeTab.close();
-    }
+    currentSession = sessionId;
+    currentEmail = email;
+    setCookie("al_session", sessionId, 30);
+    setCookie("al_email", email, 30);
 
-    // Show waiting state while the instance spins up
-    const successEl = document.getElementById("signup-success");
-    successEl.innerHTML = `
-      <div class="spinner spinner-sm" style="flex-shrink:0"></div>
-      <span>Setting up your agent \u2014 this usually takes about a minute\u2026</span>`;
-    successEl.style.display = "flex";
-    btn.style.display = "none";
+    // Open Stripe checkout if the response includes a URL
+    const checkoutUrl = item?.checkout_url || item?.checkoutUrl || item?.url;
+    if (checkoutUrl && checkoutUrl.startsWith("http"))
+      window.open(checkoutUrl, "_blank");
 
-    // Poll AGENTS_URL until the instance is ready, then auto-login
-    const deadline = Date.now() + 5 * 60 * 1000; // 5 min timeout
-    const poll = setInterval(async () => {
-      if (Date.now() > deadline) {
-        clearInterval(poll);
-        successEl.innerHTML =
-          `<span style="color:var(--danger)">Setup is taking longer than expected. ` +
-          `Try signing in manually or contact support.</span>`;
-        btn.style.display = "";
-        btnReset(btn);
-        return;
-      }
-      try {
-        const pollUrl = `${AGENTS_URL}?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`;
-        const pollRes = await fetch(pollUrl);
-        if (pollRes.ok) {
-          clearInterval(poll);
-          let pollData = [];
-          try {
-            pollData = await pollRes.json();
-          } catch (_) {}
-          currentEmail = email;
-          localStorage.setItem("al_email", email);
-          showApp();
-          processAgents(normalizeAgents(pollData));
-        }
-      } catch (_) {}
-    }, 5000);
+    showApp();
+    loadAgents();
   } catch (err) {
-    if (stripeTab) stripeTab.close();
     showAuthError("signup-error", err.message);
+  } finally {
     btnReset(btn);
   }
 }
@@ -290,7 +267,7 @@ async function applyCoupon() {
   spinner.style.display = "";
 
   try {
-    const res = await fetch(COUPON_URL, {
+    const res = await apiFetch(COUPON_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code }),
@@ -318,7 +295,21 @@ async function applyCoupon() {
 }
 
 function doSignOut() {
-  localStorage.removeItem("al_email");
+  // Invalidate server session (fire-and-forget)
+  if (currentSession) {
+    fetch(AUTH_URL, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Session-Id": currentSession,
+      },
+      body: JSON.stringify({ sessionid: currentSession }),
+    }).catch(() => {});
+  }
+  deleteCookie("al_session");
+  deleteCookie("al_email");
+  localStorage.removeItem("al_email"); // clean up legacy storage
+  currentSession = null;
   currentEmail = null;
   agents = [];
   activeUUID = null;
@@ -497,7 +488,7 @@ async function loadAgents() {
   try {
     const _agentsUrl2 = `${AGENTS_URL}?email=${encodeURIComponent(currentEmail)}`;
     dbg("→ List Agents", _agentsUrl2);
-    const res = await fetch(_agentsUrl2);
+    const res = await apiFetch(_agentsUrl2);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     let data = [];
     try {
@@ -591,7 +582,7 @@ async function loadAgentInfo(uuid) {
   try {
     const _infoUrl = `${AGENT_INFO_URL}?uuid=${encodeURIComponent(uuid)}`;
     dbg("→ Agent Info", _infoUrl);
-    const res = await fetch(_infoUrl);
+    const res = await apiFetch(_infoUrl);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     dbg("← Agent Info", json);
@@ -658,7 +649,7 @@ async function saveComment() {
   btnLoad(btn, "Saving…");
   try {
     dbg("→ Save Comment", AGENT_INFO_URL);
-    const res = await fetch(AGENT_INFO_URL, {
+    const res = await apiFetch(AGENT_INFO_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ uuid: activeUUID, key: "comment", value: text }),
@@ -769,7 +760,7 @@ async function loadKeys(uuid) {
   try {
     const _keysUrl = `${KEYS_URL}?uuid=${encodeURIComponent(uuid)}`;
     dbg("→ List API Keys", _keysUrl);
-    const res = await fetch(_keysUrl);
+    const res = await apiFetch(_keysUrl);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     dbg("← List API Keys", json);
@@ -889,7 +880,7 @@ async function savePassword() {
 
   try {
     dbg("\u2192 Update Password", PASSWORD_URL);
-    const res = await fetch(PASSWORD_URL, {
+    const res = await apiFetch(PASSWORD_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -926,7 +917,7 @@ async function doRestart() {
 
   try {
     dbg("→ Restart Agent", RESTART_URL);
-    const res = await fetch(RESTART_URL, {
+    const res = await apiFetch(RESTART_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -966,7 +957,7 @@ async function loadBackups(uuid) {
   try {
     const _backupsUrl = `${BACKUP_LIST_URL}?uuid=${encodeURIComponent(uuid)}`;
     dbg("→ List Backups", _backupsUrl);
-    const res = await fetch(_backupsUrl);
+    const res = await apiFetch(_backupsUrl);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     let data = [];
     try {
@@ -1032,7 +1023,7 @@ async function makeBackup() {
   btnLoad(btn, "…");
   try {
     dbg("→ Make Backup", BACKUP_URL);
-    const res = await fetch(BACKUP_URL, {
+    const res = await apiFetch(BACKUP_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ uuid: activeUUID }),
@@ -1061,7 +1052,7 @@ async function restoreBackup(backup) {
 
   try {
     dbg("→ Restore Backup", BACKUP_URL);
-    const res = await fetch(BACKUP_URL, {
+    const res = await apiFetch(BACKUP_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1091,7 +1082,7 @@ async function loadContract(uuid) {
   try {
     const url = `${CONTRACT_URL}?uuid=${encodeURIComponent(uuid)}`;
     dbg("\u2192 Contract", url);
-    const res = await fetch(url);
+    const res = await apiFetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     dbg("\u2190 Contract", data);
@@ -1501,7 +1492,7 @@ async function wizardCopyAndFinish() {
 
   // Mark wizard complete via the agent-info endpoint (non-fatal)
   try {
-    await fetch(AGENT_INFO_URL, {
+    await apiFetch(AGENT_INFO_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1597,6 +1588,32 @@ function toast(msg, type = "info", duration = 4000) {
 /* ═══════════════════════════════════════════════════════════════
    UTILITIES
 ═══════════════════════════════════════════════════════════════ */
+/* ─── Cookie helpers ───────────────────────────────────────── */
+function setCookie(name, value, days) {
+  const expires = new Date(Date.now() + days * 864e5).toUTCString();
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Strict`;
+}
+function getCookie(name) {
+  return document.cookie.split("; ").reduce((acc, c) => {
+    const [k, ...rest] = c.split("=");
+    return k === name ? decodeURIComponent(rest.join("=")) : acc;
+  }, null);
+}
+function deleteCookie(name) {
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Strict`;
+}
+
+/* ─── Authenticated fetch ───────────────────────────────────── */
+// Wraps fetch() for all webhook calls — injects session header when logged in.
+function apiFetch(url, options = {}) {
+  if (!currentSession) return fetch(url, options);
+  const headers = {
+    ...(options.headers || {}),
+    "X-Session-Id": currentSession,
+  };
+  return fetch(url, { ...options, headers });
+}
+
 function escHtml(s) {
   if (s == null) return "";
   return String(s)
@@ -1717,7 +1734,7 @@ async function sendChat() {
 
   try {
     dbg("→ Chat", CHAT_URL);
-    const res = await fetch(CHAT_URL, {
+    const res = await apiFetch(CHAT_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1771,7 +1788,7 @@ async function sendReferral() {
   btnLoad(btn, "Sending\u2026");
   try {
     dbg("\u2192 Referral", REFERRAL_URL);
-    const res = await fetch(REFERRAL_URL, {
+    const res = await apiFetch(REFERRAL_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
