@@ -203,9 +203,14 @@ async function doSignUp() {
   const btn = document.getElementById("signup-btn");
   btnLoad(btn, "Hiring agent\u2026");
 
+  // Open a blank tab NOW while we still have the user-gesture context.
+  // Browsers block window.open called after an await, so we must do this
+  // synchronously before any async work begins.
+  const stripeTab = window.open("", "_blank");
+
   try {
-    // Step 1: authenticate to get a session, then open the agent panel
-    dbg("\u2192 Hire Agent – auth", AUTH_URL);
+    // Step 1: authenticate to get a session
+    dbg("\u2192 Hire Agent \u2013 auth", AUTH_URL);
     const authRes = await fetch(AUTH_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -215,7 +220,7 @@ async function doSignUp() {
       throw new Error("Account creation failed. Please try again later.");
 
     const authData = await authRes.json();
-    dbg("\u2190 Hire Agent – auth", authData);
+    dbg("\u2190 Hire Agent \u2013 auth", authData);
     const authRaw = Array.isArray(authData) ? authData[0] : authData;
     // unwrap n8n {json:{...}} envelope if present
     const authItem =
@@ -231,36 +236,39 @@ async function doSignUp() {
     setCookie("al_session", sessionId, 30);
     setCookie("al_email", email, 30);
 
-    // Open the agent panel immediately
-    showApp();
-    loadAgents();
-
-    // Step 2: trigger agent creation and open Stripe checkout
-    dbg("\u2192 Hire Agent – create", SIGNUP_URL);
+    // Step 2: trigger agent creation
+    dbg("\u2192 Hire Agent \u2013 create", SIGNUP_URL);
     const createRes = await fetch(SIGNUP_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password, agent, location }),
     });
     if (!createRes.ok) {
-      toast("Agent provisioning failed. Please contact support.", "error");
-      return;
+      throw new Error("Agent provisioning failed. Please contact support.");
     }
 
     const createData = await createRes.json();
-    dbg("\u2190 Hire Agent – create", createData);
+    dbg("\u2190 Hire Agent \u2013 create", createData);
     const createRaw = Array.isArray(createData) ? createData[0] : createData;
     const createItem =
       createRaw && typeof createRaw === "object" && "json" in createRaw
         ? createRaw.json
         : createRaw;
 
-    // Open Stripe checkout if the response includes a URL
+    // Navigate the pre-opened tab to the Stripe checkout URL
     const checkoutUrl =
       createItem?.checkout_url || createItem?.checkoutUrl || createItem?.url;
-    if (checkoutUrl && checkoutUrl.startsWith("http"))
-      window.open(checkoutUrl, "_blank");
+    if (checkoutUrl && checkoutUrl.startsWith("http")) {
+      stripeTab.location.href = checkoutUrl;
+    } else {
+      stripeTab.close();
+    }
+
+    // Enter the app and load agents now that the agent has been created
+    showApp();
+    loadAgents();
   } catch (err) {
+    stripeTab?.close();
     showAuthError("signup-error", err.message);
   } finally {
     btnReset(btn);
