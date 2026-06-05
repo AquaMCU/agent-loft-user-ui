@@ -512,6 +512,10 @@
                                                 oninput="
                                                     togglePwSave(this.value)
                                                 "
+                                                onkeydown="
+                                                    if (event.key === 'Enter')
+                                                        savePassword();
+                                                "
                                             />
                                             <button
                                                 type="button"
