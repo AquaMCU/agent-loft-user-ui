@@ -285,6 +285,7 @@ body::before {
     display: flex;
     align-items: center;
     gap: 10px;
+    position: relative;
 }
 
 .user-pill {
@@ -297,6 +298,93 @@ body::before {
     border-radius: 20px;
     font-size: 12px;
     color: var(--text-muted);
+    cursor: pointer;
+    transition:
+        border-color 0.15s,
+        color 0.15s;
+    user-select: none;
+}
+
+.user-pill:hover {
+    border-color: var(--accent);
+    color: var(--text);
+}
+
+/* ─── User account panel dropdown ─────────────────────────── */
+.user-panel {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    min-width: 264px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    z-index: 200;
+    overflow: hidden;
+    animation: panelIn 0.15s ease;
+}
+
+@keyframes panelIn {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.user-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 11px 14px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-inner);
+}
+
+.user-panel-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    gap: 12px;
+}
+
+.user-panel-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.user-panel-val {
+    font-size: 12px;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 180px;
+}
+
+.user-panel-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 0;
+}
+
+.user-panel-pw {
+    padding: 12px 14px 14px;
+}
+
+.user-panel-pw .form-group {
+    margin-bottom: 4px;
 }
 
 .pulse-dot {

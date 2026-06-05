@@ -32,6 +32,8 @@ const COUPON_URL =
 // WIZZARD=false is written via AGENT_INFO_URL (POST { uuid, key, value })
 const AUTH_URL =
   "https://n8n.agent-loft.com/webhook/e256310a-6627-45ba-a221-599751943fe6";
+const ACCOUNT_PASSWORD_URL =
+  "https://n8n.agent-loft.com/webhook/4644f196-a31c-4d1a-b76e-03e9afe39302";
 
 /* ─── State ─────────────────────────────────────────────────── */
 let currentEmail = null;
@@ -102,6 +104,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // Close confirm on backdrop click
   document.getElementById("confirm-backdrop").addEventListener("click", (e) => {
     if (e.target === e.currentTarget) confirmClose(false);
+  });
+
+  // Close user panel when clicking outside of it
+  document.addEventListener("click", (e) => {
+    const wrap = document.getElementById("user-panel-wrap");
+    if (wrap && !wrap.contains(e.target)) closeUserPanel();
   });
 });
 
@@ -381,6 +389,7 @@ function doSignOut() {
   const couponError = document.getElementById("coupon-error");
   if (couponError) couponError.style.display = "none";
 
+  closeUserPanel();
   showAuth();
 }
 
@@ -935,6 +944,81 @@ async function savePassword() {
     toast("Password updated successfully.", "success");
     document.getElementById("pw-new-input").value = "";
     togglePwSave("");
+  } catch (err) {
+    toast(err.message, "error");
+  } finally {
+    btnReset(btn);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ACCOUNT / USER PANEL
+═══════════════════════════════════════════════════════════════ */
+function toggleUserPanel() {
+  const panel = document.getElementById("user-panel");
+  if (!panel) return;
+  if (panel.style.display === "none" || panel.style.display === "") {
+    document.getElementById("user-panel-email-val").textContent =
+      currentEmail || "—";
+    panel.style.display = "block";
+  } else {
+    closeUserPanel();
+  }
+}
+
+function closeUserPanel() {
+  const panel = document.getElementById("user-panel");
+  if (!panel) return;
+  panel.style.display = "none";
+  const inp = document.getElementById("acct-pw-input");
+  if (inp) inp.value = "";
+  const btn = document.getElementById("acct-pw-save-btn");
+  if (btn) btn.style.display = "none";
+}
+
+function toggleAccountPwSave(value) {
+  const btn = document.getElementById("acct-pw-save-btn");
+  if (btn) btn.style.display = value ? "flex" : "none";
+}
+
+async function saveAccountPassword() {
+  const newPw = document.getElementById("acct-pw-input").value;
+  const btn = document.getElementById("acct-pw-save-btn");
+
+  if (!newPw) {
+    toast("Please enter a new password.", "warning");
+    return;
+  }
+  if (newPw.length < 8) {
+    toast("Password must be at least 8 characters.", "warning");
+    return;
+  }
+
+  btn.disabled = true;
+  const ok = await confirmDialog(
+    "Change Account Password",
+    "This will update your account login password immediately. Continue?",
+  );
+  if (!ok) {
+    btn.disabled = false;
+    return;
+  }
+
+  btnLoad(btn, "");
+  try {
+    dbg("→ Update Account Password", ACCOUNT_PASSWORD_URL);
+    const res = await apiFetch(ACCOUNT_PASSWORD_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: currentEmail, password: newPw }),
+    });
+    if (!res.ok)
+      throw new Error(
+        `Failed to update account password (HTTP ${res.status}).`,
+      );
+
+    toast("Account password updated.", "success");
+    closeUserPanel();
   } catch (err) {
     toast(err.message, "error");
   } finally {
